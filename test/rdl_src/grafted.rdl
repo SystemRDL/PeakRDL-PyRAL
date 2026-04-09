@@ -1,0 +1,7 @@
+addrmap grafted {
+    tiny t0;
+    addrmap {
+        tiny t1;
+        tiny t2[4];
+    } amap;
+};

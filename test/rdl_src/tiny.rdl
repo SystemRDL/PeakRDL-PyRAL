@@ -1,0 +1,5 @@
+addrmap tiny {
+    reg {
+        field {} f0;
+    } r0;
+};

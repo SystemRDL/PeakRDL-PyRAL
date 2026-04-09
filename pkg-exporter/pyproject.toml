@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "peakrdl-pyral"
+dynamic = ["version"]
+requires-python = ">=3.7" # TODO: Confirm this
+dependencies = [
+    "systemrdl-compiler ~= 1.32",
+]
+
+authors = [
+    {name="Alex Mykyta"},
+]
+description = "Generate a Python register abstraction layer"
+readme = "README.md"
+license = {text = "LGPLv3"}
+keywords = [
+    "SystemRDL", "PeakRDL", "CSR", "compiler", "tool", "registers", "generator",
+    "register abstraction layer", "FPGA", "ASIC",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+]
+
+[project.optional-dependencies]
+cli = [
+    "peakrdl-cli >= 1.2.3",
+]
+
+[project.urls]
+Source = "https://github.com/SystemRDL/PeakRDL-pyral"
+Tracker = "https://github.com/SystemRDL/PeakRDL-pyral/issues"
+Changelog = "https://github.com/SystemRDL/PeakRDL-pyral/releases"
+Documentation = "https://peakrdl-pyral.readthedocs.io/"
+
+[tool.setuptools.dynamic]
+# TODO: symlink the versions
+version = {attr = "peakrdl_pyral.__about__.__version__"}
+
+[project.entry-points."peakrdl.exporters"]
+pyral = "peakrdl_pyral.__peakrdl__:Exporter"
