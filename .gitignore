@@ -8,12 +8,9 @@
 **/.mypy_cache
 **/_build
 **/*.out
-**/transcript
 **/*.log
 **/*.pb
-**/.Xil
-
-build/
-dist/
-*.egg-info/
-.eggs/
+**/build
+**/dist
+**/*.egg-info
+**/.eggs

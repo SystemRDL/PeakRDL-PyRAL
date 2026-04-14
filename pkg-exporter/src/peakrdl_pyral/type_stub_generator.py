@@ -1,0 +1,197 @@
+from collections import OrderedDict
+
+from systemrdl.node import AddrmapNode, MemNode, RegfileNode
+from systemrdl.node import RegNode, AddressableNode
+
+class RootDefinition:
+    """
+    Represents the generated stub code of a root component definition, and
+    all the private definitions enclosed inside it
+    """
+    def __init__(self) -> None:
+        self._lines: list[str] = []
+        self._current_indent = 0
+
+        # Additional RootDefinition objects that this depends on.
+        # Currently unused, but may be useful in the future if multi-file
+        # partitioning is needed
+        # {type_name : object}
+        self.dependencies: dict[str, RootDefinition] = OrderedDict()
+
+        # External grafted nodes this depends on
+        # {type_name : python_import_path}
+        self.external_dependencies: dict[str, str] = OrderedDict()
+
+    @property
+    def is_empty(self) -> bool:
+        return not bool(self._lines)
+
+    def push_indent(self) -> None:
+        self._current_indent += 1
+
+    def pop_indent(self) -> None:
+        self._current_indent -= 1
+
+    def add_line(self, s: str) -> None:
+        s = ("    " * self._current_indent) + s + "\n"
+        self._lines.append(s)
+
+
+class TypeStubGenerator:
+    def __init__(self, pyi_path: str, external_types: dict[str, str]) -> None:
+        self._path = pyi_path
+        self.external_types = external_types
+
+        # RootDefinitions that have been accumulated.
+        # This gets built in reverse order
+        # {rdl_type_name, RootDefinition}
+        self._root_defs: dict[str, RootDefinition] = OrderedDict()
+
+    def node_is_external(self, node: AddressableNode) -> bool:
+        return self.node_is_in_root_ns(node) and (node.type_name in self.external_types)
+
+    def node_is_in_root_ns(self, node: AddressableNode) -> bool:
+        return node.get_scope_path() == ""
+
+    def generate(self, top_node: AddrmapNode | MemNode | RegfileNode) -> None:
+        rootdef = RootDefinition()
+        assert top_node.type_name is not None
+        self._root_defs[top_node.type_name] = rootdef
+        self.generate_group(top_node, rootdef)
+
+        with open(self._path, "w", encoding="utf-8") as f:
+            f.writelines([
+                "from collections.abc import Iterator\n",
+                "from contextlib import contextmanager\n",
+                "from peakrdl_pyral_runtime.model import RALGroup, RALRegister, RALField, RegValue\n",
+            ])
+
+            # Collect all external deps used
+            external_deps = OrderedDict()
+            for root_def in reversed(self._root_defs.values()):
+                external_deps.update(root_def.external_dependencies)
+            for type_name, import_path in external_deps.items():
+                f.write(f"from {import_path}_stubs import {type_name}\n")
+
+            # Flatten all root defs
+            for root_def in reversed(self._root_defs.values()):
+                f.writelines(root_def._lines)
+
+    def generate_group(self, node: AddrmapNode | MemNode | RegfileNode, current_rootdef: RootDefinition) -> str:
+        """
+        Generates a group class definition.
+        Returns the type name of the class
+        """
+        children = [c for c in node.children() if isinstance(c, (AddrmapNode, RegfileNode, MemNode, RegNode))]
+
+        # Derive the type name
+        if current_rootdef.is_empty:
+            # Just started a new rootdef. By definition, this node is in the root
+            # namespace, and is guaranteed to have a type name
+            assert isinstance(node.type_name, str)
+            type_name = node.type_name
+        else:
+            # Otherwise, use the instance name
+            type_name = node.inst_name
+        type_name += "_Group"
+
+        # Class definition
+        s = f"class {type_name}(RALGroup):"
+        if not children:
+            s += " ..."
+        current_rootdef.add_line(s)
+        current_rootdef.push_indent()
+
+        # Nested class definitions of children
+        child_type_names = []
+        for child in children:
+            if self.node_is_external(child):
+                assert child.type_name is not None # was implicitly selected as a root component
+                if isinstance(child, RegNode):
+                    child_type_name = f"{child.type_name}_Register"
+                else:
+                    child_type_name = f"{child.type_name}_Group"
+                current_rootdef.external_dependencies[child_type_name] = self.external_types[child.type_name]
+            elif self.node_is_in_root_ns(child):
+                assert child.type_name is not None # is in root ns. Always has type name
+                if child.type_name not in self._root_defs:
+                    # Hasn't been defined yet
+                    # Start a new rootdef
+                    child_rootdef = RootDefinition()
+                    self._root_defs[child.type_name] = child_rootdef
+                    if isinstance(child, RegNode):
+                        child_type_name = self.generate_reg(child, child_rootdef)
+                    else:
+                        child_type_name = self.generate_group(child, child_rootdef)
+                else:
+                    child_rootdef = self._root_defs[child.type_name]
+
+                if isinstance(child, RegNode):
+                    child_type_name = f"{child.type_name}_Register"
+                else:
+                    child_type_name = f"{child.type_name}_Group"
+                current_rootdef.dependencies[child_type_name] = child_rootdef
+            else:
+                if isinstance(child, RegNode):
+                    child_type_name = self.generate_reg(child, current_rootdef)
+                else:
+                    child_type_name = self.generate_group(child, current_rootdef)
+            child_type_names.append(child_type_name)
+
+        # Child instances
+        for child, child_type_name in zip(children, child_type_names):
+            if child.array_dimensions:
+                # Is an array. Wrap it in the appropriate number of list[]
+                for _ in child.array_dimensions:
+                    child_type_name = f"list[{child_type_name}]"
+            current_rootdef.add_line(f"{child.inst_name}: {child_type_name}")
+
+        current_rootdef.pop_indent()
+        return type_name
+
+    def generate_reg(self, node: RegNode, current_rootdef: RootDefinition) -> str:
+        """
+        Generates a register class definition.
+        Returns the type name of the class
+        """
+
+        # Derive the type name
+        if current_rootdef.is_empty:
+            # Just started a new rootdef. By definition, this node is in the root
+            # namespace, and is guaranteed to have a type name
+            assert isinstance(node.type_name, str)
+            base_type_name = node.type_name
+        else:
+            # Otherwise, use the instance name
+            base_type_name = node.inst_name
+
+        type_name = base_type_name + "_Reg"
+
+        # Class definition
+        s = f"class {type_name}(RALRegister):"
+        current_rootdef.add_line(s)
+        current_rootdef.push_indent()
+
+        # Specialized RegValue for this reg
+        self.generate_regvalue(node, current_rootdef, base_type_name)
+
+        # overrides for methods that use RegValue
+        current_rootdef.add_line(f"def read_fields(self) -> {base_type_name}_RV: ...")
+        current_rootdef.add_line("@contextmanager")
+        current_rootdef.add_line(f"def write_fields(self) -> Iterator[{base_type_name}_RV]: ...")
+        current_rootdef.add_line("@contextmanager")
+        current_rootdef.add_line(f"def change_fields(self) -> Iterator[{base_type_name}_RV]: ...")
+
+        # Child field instances
+        for child in node.fields():
+            current_rootdef.add_line(f"{child.inst_name}: RALField")
+
+        current_rootdef.pop_indent()
+        return type_name
+
+    def generate_regvalue(self, node: RegNode, current_rootdef: RootDefinition, base_type_name: str) -> None:
+        current_rootdef.add_line(f"class {base_type_name}_RV(RegValue):")
+        current_rootdef.push_indent()
+        for child in node.fields():
+            current_rootdef.add_line(f"{child.inst_name}: int")
+        current_rootdef.pop_indent()
