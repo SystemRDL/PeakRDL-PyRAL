@@ -1,10 +1,12 @@
 from unittest import TestCase
-from typing import Optional, Dict
+from typing import Optional
 import inspect
 import os
 import sys
 import shutil
 import pathlib
+
+import pytest
 
 from peakrdl_pyral.exporter import PyRALExporter
 from peakrdl_pyral_runtime import model as pyral
@@ -13,13 +15,23 @@ from systemrdl.node import AddrmapNode, AddressableNode, FieldNode, SignalNode
 
 class PyRALTestcase(TestCase):
 
+    #: this gets auto-loaded via the _load_request autouse fixture
+    request: pytest.FixtureRequest
+
+    @pytest.fixture(autouse=True)
+    def _load_request(self, request):
+        self.request = request
+
     def get_testcase_dir(self) -> str:
         class_dir = os.path.dirname(inspect.getfile(self.__class__))
         return class_dir
 
     def get_run_dir(self) -> str:
         this_dir = self.get_testcase_dir()
-        run_dir = os.path.join(this_dir, "testdata.out", self.__class__.__name__)
+        run_dir = os.path.join(
+            this_dir,
+            "testdata.out", self.__class__.__name__ + "-" + self.request.node.name
+        )
         return run_dir
 
     def prepare_run_dir(self) -> None:
@@ -28,7 +40,7 @@ class PyRALTestcase(TestCase):
             shutil.rmtree(run_dir)
         pathlib.Path(run_dir).mkdir(parents=True, exist_ok=True)
 
-    def export(self, src_files: list[str], external_types: Optional[Dict[str, str]] = None) -> AddrmapNode:
+    def export(self, src_files: list[str], external_types: Optional[dict[str, str]] = None) -> AddrmapNode:
         this_dir = self.get_testcase_dir()
         rdlc = RDLCompiler()
         for file in src_files:

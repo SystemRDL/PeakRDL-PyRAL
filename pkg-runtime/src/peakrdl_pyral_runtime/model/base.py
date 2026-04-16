@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Union
 
 # TODO: Add slots?
 
@@ -32,18 +32,18 @@ class AddressableRALNode(RALNode):
         super().__init__(parent, dbapi, dbid, name)
         self.parent: Optional["RALGroup"]
         self.address = address
-        self._hwio: Optional["HWIO"] = None
+        self._hwio: Optional["HWIO"] = self._dbapi.hwio_registry.attached_hwio.get(self.path)
 
-    def __getattr__(self, name: str) -> "RALArray | RALRegister | RALGroup | RALField":
+    def __getattr__(self, name: str) -> Union["RALArray", "RALRegister", "RALGroup", "RALField"]:
         child = self._dbapi.get_child(self, name)
         if child is None:
             raise AttributeError(f"'{repr(self)}' has no attribute '{name}'")
         return child
 
-    def children(self) -> list["RALArray | RALRegister | RALGroup | RALField"]:
+    def children(self) -> list[Union["RALArray", "RALRegister", "RALGroup", "RALField"]]:
         return self._dbapi.get_children(self)
 
-    def _lookup_hwio(self) -> Tuple["HWIO", int]:
+    def _lookup_hwio(self) -> tuple["HWIO", int]:
         # TODO: Implement HWIO object caching
         if self._hwio is not None:
             # This node has a HWIO bound to it
@@ -67,6 +67,8 @@ class AddressableRALNode(RALNode):
 
     def attach_hwio(self, hwio: "HWIO") -> None:
         self._hwio = hwio
+        self._dbapi.hwio_registry.attached_hwio[self.path] = hwio
 
     def detach_hwio(self) -> None:
         self._hwio = None
+        self._dbapi.hwio_registry.attached_hwio.pop(self.path, None)

@@ -50,3 +50,6 @@ class TestRegValue(TestCase):
 
         with self.assertRaises(AttributeError):
             _ = rv.x
+
+        with self.assertRaises(ValueError):
+            rv.a = 256

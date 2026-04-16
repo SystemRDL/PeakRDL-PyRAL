@@ -1,0 +1,8 @@
+addrmap wide_regs {
+    reg {
+        regwidth = 64;
+        accesswidth = 32;
+        field {} fh[63:32];
+        field {} fl[31:0];
+    } r0;
+};

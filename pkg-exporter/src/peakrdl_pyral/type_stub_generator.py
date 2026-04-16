@@ -1,3 +1,4 @@
+from typing import Union
 from collections import OrderedDict
 
 from systemrdl.node import AddrmapNode, MemNode, RegfileNode
@@ -53,7 +54,7 @@ class TypeStubGenerator:
     def node_is_in_root_ns(self, node: AddressableNode) -> bool:
         return node.get_scope_path() == ""
 
-    def generate(self, top_node: AddrmapNode | MemNode | RegfileNode) -> None:
+    def generate(self, top_node: Union[AddrmapNode, MemNode, RegfileNode]) -> None:
         rootdef = RootDefinition()
         assert top_node.type_name is not None
         self._root_defs[top_node.type_name] = rootdef
@@ -77,7 +78,7 @@ class TypeStubGenerator:
             for root_def in reversed(self._root_defs.values()):
                 f.writelines(root_def._lines)
 
-    def generate_group(self, node: AddrmapNode | MemNode | RegfileNode, current_rootdef: RootDefinition) -> str:
+    def generate_group(self, node: Union[AddrmapNode, MemNode, RegfileNode], current_rootdef: RootDefinition) -> str:
         """
         Generates a group class definition.
         Returns the type name of the class

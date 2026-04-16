@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Any, Union, overload
+from typing import TYPE_CHECKING, Any, Union, overload
 from collections.abc import Sequence
 
 if TYPE_CHECKING:
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     RALChild = Union["RALArray", RALRegister, RALGroup, RALField]
 
 class RALArray(Sequence):
-    def __init__(self, parent: "RALGroup", dbapi: "DBAPI", resolved_dims: List[int], dims: List[int], row: "sqlite3.Row") -> None:
+    def __init__(self, parent: "RALGroup", dbapi: "DBAPI", resolved_dims: list[int], dims: list[int], row: "sqlite3.Row") -> None:
         self._parent = parent
         self._dbapi = dbapi
         self._resolved_dims = resolved_dims
@@ -36,9 +36,9 @@ class RALArray(Sequence):
     def __getitem__(self, subscript: int) -> "RALChild": ...
 
     @overload
-    def __getitem__(self, subscript: slice) -> List["RALChild"]: ...
+    def __getitem__(self, subscript: slice) -> list["RALChild"]: ...
 
-    def __getitem__(self, subscript: Any) -> "RALChild" | List["RALChild"]:
+    def __getitem__(self, subscript: Any) -> Union["RALChild", list["RALChild"]]:
         dim = self._dims[self._this_dim_idx]
 
         if isinstance(subscript, slice):
@@ -100,10 +100,3 @@ class RALArray(Sequence):
 
     def __len__(self) -> int:
         return self._dims[self._this_dim_idx]
-
-    def __eq__(self, value: Any) -> bool:
-        # TODO:
-        #  Compare true child membership identity. Not just compare by path.
-        #  Probably based on dbid.
-        #  I probably also need to retain the concept ow WHICH db the dbid is associated with!
-        raise NotImplementedError

@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional
 import os
 import textwrap
 
@@ -8,7 +8,7 @@ from .db_generator import DBGenerator
 from .type_stub_generator import TypeStubGenerator
 
 class PyRALExporter:
-    def export(self, top_node: AddrmapNode, output_dir: str, external_types: Optional[Dict[str, str]] = None) -> None:
+    def export(self, top_node: AddrmapNode, output_dir: str, external_types: Optional[dict[str, str]] = None) -> None:
         if external_types is None:
             external_types = {}
 
@@ -50,7 +50,7 @@ class PyRALExporter:
             dbapi = DBAPI(db_path, __name__)
             return dbapi
 
-        def get_ral(offset: int = 0) -> "{ral_name}_Group":
+        def get_ral(*, offset: int = 0) -> "{ral_name}_Group":
             dbapi = _get_dbapi()
             root = dbapi.get_root(offset)
             return root # type: ignore[return-value]

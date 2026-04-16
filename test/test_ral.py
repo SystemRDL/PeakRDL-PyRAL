@@ -1,6 +1,6 @@
 from pyral_testutils.pyral_testcase import PyRALTestcase
 from peakrdl_pyral_runtime import model as pyral
-from systemrdl.node import AddressableNode, FieldNode
+from peakrdl_pyral_runtime.dbapi import DBAPI
 
 class TestRAL(PyRALTestcase):
     def test_structure(self) -> None:
@@ -27,6 +27,7 @@ class TestRAL(PyRALTestcase):
                 "<RALArray of RALRegister: structural.r1[][][]>",
                 "<RALGroup: structural.sub1>",
                 "<RALArray of RALGroup: structural.sub2[]>",
+                "<RALRegister: structural.r2>",
             ]
         )
 
@@ -106,3 +107,25 @@ class TestRAL(PyRALTestcase):
 
         with self.assertRaises(TypeError):
             ral.sub2["invalid"]
+
+
+    def test_db_overwrite(self) -> None:
+        self.export([
+            "rdl_src/structural.rdl"
+        ])
+        self.export([
+            "rdl_src/structural.rdl"
+        ])
+
+    def test_version_mismatch(self) -> None:
+        self.export([
+            "rdl_src/structural.rdl"
+        ])
+        stash_version = DBAPI.DBAPI_VERSION
+        DBAPI.DBAPI_VERSION = "BAD"
+        import structural
+        with self.assertRaises(ValueError):
+            structural.get_ral()
+
+        # restore version to not corrupt runtime state
+        DBAPI.DBAPI_VERSION = stash_version

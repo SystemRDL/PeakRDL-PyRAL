@@ -1,3 +1,4 @@
+from typing import Union
 from abc import ABC, abstractmethod
 
 class HWIO(ABC):
@@ -63,7 +64,7 @@ class HWIO(ABC):
         addr = self.offset + offset
         return self._read_bytes_impl(addr, size)
 
-    def write_bytes(self, offset: int, data: bytes|bytearray) -> None:
+    def write_bytes(self, offset: int, data: Union[bytes, bytearray]) -> None:
         addr = self.offset + offset
         self._write_bytes_impl(addr, data)
 
@@ -84,7 +85,7 @@ class HWIO(ABC):
             addr += 1
         return data
 
-    def _write_bytes_impl(self, addr: int, data: bytes|bytearray) -> None:
+    def _write_bytes_impl(self, addr: int, data: Union[bytes, bytearray]) -> None:
         for b in data:
             self._write_impl(addr, b, 1)
             addr += 1

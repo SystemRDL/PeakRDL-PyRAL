@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from .base import AddressableRALNode
 
@@ -37,7 +37,7 @@ class RALGroup(AddressableRALNode):
         addr = self.address - hwio_addr_offset + offset
         hwio.write_list(addr, data, accesswidth)
 
-    def write_bytes(self, offset: int, data: bytes|bytearray) -> None:
+    def write_bytes(self, offset: int, data: Union[bytes, bytearray]) -> None:
         hwio, hwio_addr_offset = self._lookup_hwio()
         addr = self.address - hwio_addr_offset + offset
         hwio.write_bytes(addr, data)

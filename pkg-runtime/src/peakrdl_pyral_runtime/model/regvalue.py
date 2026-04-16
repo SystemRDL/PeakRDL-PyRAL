@@ -1,11 +1,11 @@
-from typing import Iterator, Tuple, Dict, Any
-from collections.abc import Iterable
+from typing import Any
+from collections.abc import Iterable, Iterator
 
 # Far more performant to store the spec as a tuple rather than a higher order object
-SpecEntry = Tuple[int, int] # (offset, width)
+SpecEntry = tuple[int, int] # (offset, width)
 
 class RegValue(Iterable):
-    def __init__(self, value: int, spec: Dict[str, SpecEntry]):
+    def __init__(self, value: int, spec: dict[str, SpecEntry]):
         self._value = value
         self._spec = spec
 
@@ -30,8 +30,12 @@ class RegValue(Iterable):
         assert isinstance(value, int)
         offset, width = self._spec[name]
         mask = ((1 << width) - 1) << offset
-        self._value = (self._value & ~mask) | ((value << offset) & mask)
+        value <<= offset
+        masked_value = value & mask
+        if value != masked_value:
+            raise ValueError(f"Value '{value >> offset}' is out of range for {width}-bit wide field '{name}'")
+        self._value = (self._value & ~mask) | masked_value
 
-    def __iter__(self) -> Iterator[Tuple[str, int]]:
+    def __iter__(self) -> Iterator[tuple[str, int]]:
         items = [(name, getattr(self, name)) for name in self._spec.keys()]
         return iter(items)

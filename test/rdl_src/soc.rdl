@@ -1,0 +1,20 @@
+reg myreg {
+    field {} a[7:0];
+};
+
+addrmap subsystem {
+    myreg r0 @ 0x0;
+    myreg r1 @ 0x4;
+};
+
+addrmap soc {
+    subsystem s0 @ 0x0000;
+    subsystem s1 @ 0x1000;
+    subsystem s23[2] @ 0x2000 += 0x1000;
+
+    addrmap {
+        subsystem s0 @ 0x0000;
+        subsystem s1 @ 0x1000;
+        subsystem s2 @ 0x2000;
+    } sub @ 0x10000;
+};

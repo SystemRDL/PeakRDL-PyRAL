@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING
+from collections.abc import Iterator
 from contextlib import contextmanager
 
 from .base import AddressableRALNode

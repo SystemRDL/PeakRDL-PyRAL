@@ -1,4 +1,4 @@
-from typing import Union, Optional, Dict
+from typing import Union, Optional
 import sqlite3
 import os
 import enum
@@ -23,7 +23,7 @@ class TypeID(enum.Enum):
 
 
 class DBGenerator:
-    def __init__(self, db_path: str, external_types: Dict[str, str]) -> None:
+    def __init__(self, db_path: str, external_types: dict[str, str]) -> None:
         self._init_db(db_path)
         self.external_types = external_types
 

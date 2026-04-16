@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "peakrdl-pyral"
 dynamic = ["version"]
-requires-python = ">=3.7" # TODO: Confirm this
+requires-python = ">=3.9"
 dependencies = [
     "systemrdl-compiler ~= 1.32",
 ]
@@ -43,7 +43,6 @@ Changelog = "https://github.com/SystemRDL/PeakRDL-pyral/releases"
 Documentation = "https://peakrdl-pyral.readthedocs.io/"
 
 [tool.setuptools.dynamic]
-# TODO: symlink the versions
 version = {attr = "peakrdl_pyral.__about__.__version__"}
 
 [project.entry-points."peakrdl.exporters"]

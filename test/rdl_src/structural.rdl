@@ -27,5 +27,12 @@ addrmap structural {
     subrf sub1 @ 0x1000;
     subrf sub2[8] @ 0x2000 += 0x80;
 
+    reg {
+        field {} a[7:0];
+        field {} b[23:16];
+        field {} c[30:30];
+        field {} d[31:31];
+    } r2 @ 0x3000;
+
     signal {} my_signal;
 };
