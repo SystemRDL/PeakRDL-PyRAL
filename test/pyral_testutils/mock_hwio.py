@@ -1,9 +1,9 @@
 from typing import Optional
-from peakrdl_pyral_runtime.hwio import DemoHWIO
+from peakrdl_pyral_runtime.hwio.demo import DemoHWIO
 
 class MockHWIO(DemoHWIO):
     def __init__(self, *, offset: int = 0) -> None:
-        super().__init__(offset)
+        super().__init__(offset=offset)
 
         # List of: ("R/W", addr, size, data|None)
         self._xfer_log: list[tuple[str, int, int, Optional[int]]] = []

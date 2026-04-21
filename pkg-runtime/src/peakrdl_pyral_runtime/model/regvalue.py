@@ -5,6 +5,29 @@ from collections.abc import Iterable, Iterator
 SpecEntry = tuple[int, int] # (offset, width)
 
 class RegValue(Iterable):
+    """
+    Structured representation of a register's value that allows field-level access.
+
+    Fields can be accessed by name:
+
+    .. code-block:: python
+
+        rv.field_1 = 123
+        print(rv.field_1)
+
+    :class:`RegValue` objects are iterable as name/value pairs:
+
+    .. code-block:: python
+
+        for name, value in rv:
+            print(f"Field {name} has value {value}")
+
+    :class:`RegValue` objects can be converted to an integer:
+
+    .. code-block:: python
+
+        rv_value = int(rv)
+    """
     def __init__(self, value: int, spec: dict[str, SpecEntry]):
         self._value = value
         self._spec = spec

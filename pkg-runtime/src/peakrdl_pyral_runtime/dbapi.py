@@ -7,7 +7,7 @@ import weakref
 
 from .model import RALRegister, RALField, RALGroup, RALArray, RegValue
 from .model import AddressableRALNode
-from .hwio import HWIO
+from .hwio.base import HWIO
 
 class HWIORegistry:
     """
@@ -24,6 +24,9 @@ class DBAPI:
     """
     Implements the mechanisms to query the RAL database and construct RAL nodes
     from the database definition.
+
+    Go away! This is a **private** API! RAL users shall not expect this to
+    remain stable between runtime versions!
     """
     # DBAPI version denotes the underlying database content's compatibility with
     # the runtime implementation. This value is incremented any time there is a

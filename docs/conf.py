@@ -10,10 +10,6 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
-sys.path.insert(0, os.path.abspath('../src/'))
-
 import datetime
 
 # -- Project information -----------------------------------------------------
@@ -31,16 +27,20 @@ author = 'Alex Mykyta'
 extensions = [
     'sphinx.ext.autodoc' ,
     'sphinx.ext.napoleon',
+    'sphinx.ext.todo',
 ]
 
+autoclass_content = 'both'
+
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = []
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['.venv', '_build', 'Thumbs.db', '.DS_Store']
 
+todo_emit_warnings = True
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -50,7 +50,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = "sphinx_book_theme"
 
 html_theme_options = {
-    "repository_url": "https://github.com/SystemRDL/PeakRDL-pyRAL",
+    "repository_url": "https://github.com/SystemRDL/PeakRDL-PyRAL",
     "path_to_docs": "docs",
     "use_download_button": False,
     "use_source_button": True,

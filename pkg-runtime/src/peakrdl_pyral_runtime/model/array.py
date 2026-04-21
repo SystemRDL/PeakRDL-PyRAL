@@ -11,6 +11,10 @@ if TYPE_CHECKING:
     RALChild = Union["RALArray", RALRegister, RALGroup, RALField]
 
 class RALArray(Sequence):
+    """
+    Represents an array of a RAL node. A ``RALArray`` may be indexed and
+    iterated over just like regular Python lists.
+    """
     def __init__(self, parent: "RALGroup", dbapi: "DBAPI", resolved_dims: list[int], dims: list[int], row: "sqlite3.Row") -> None:
         self._parent = parent
         self._dbapi = dbapi

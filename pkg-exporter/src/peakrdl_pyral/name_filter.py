@@ -1,4 +1,4 @@
-GROUP_RESERVED_WORDS = {
+COMMON_RESERVED_WORDS = {
     "parent",
     "_dbapi",
     "_dbid",
@@ -9,34 +9,25 @@ GROUP_RESERVED_WORDS = {
     "_lookup_hwio",
     "children",
     "read",
-    "read_list",
-    "read_bytes",
     "write",
-    "write_list",
-    "write_bytes",
     "detach_hwio",
     "attach_hwio",
+    "_abc_impl",
 }
 
-REGISTER_RESERVED_WORDS = {
-    "parent",
-    "_dbapi",
-    "_dbid",
-    "name",
-    "path",
-    "address",
-    "_hwio",
-    "_lookup_hwio",
-    "children",
+GROUP_RESERVED_WORDS = COMMON_RESERVED_WORDS | {
+    "read_list",
+    "read_bytes",
+    "write_list",
+    "write_bytes",
+}
+
+REGISTER_RESERVED_WORDS = COMMON_RESERVED_WORDS | {
     "width",
     "accesswidth",
-    "read",
     "read_fields",
-    "write",
     "write_fields",
     "change_fields",
-    "detach_hwio",
-    "attach_hwio",
 }
 
 def filter_group_item(s: str) -> str:
