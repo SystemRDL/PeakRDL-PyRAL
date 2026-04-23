@@ -80,7 +80,7 @@ class AddressableRALNode(RALNode, ABC):
             return self.parent._lookup_hwio()
 
         # Reached root without finding anything
-        raise LookupError("No HWIF was connected")
+        raise LookupError("No HWIO was connected")
 
     def attach_hwio(self, hwio: "HWIO") -> None:
         """

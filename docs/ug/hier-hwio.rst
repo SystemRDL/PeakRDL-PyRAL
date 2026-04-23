@@ -24,16 +24,16 @@ different hierarchical nodes.
     from my_soc_ral import my_soc
 
     # Create each HWIO
+    uio0 = MMapFileHWIO("/dev/uio0")
     uio1 = MMapFileHWIO("/dev/uio1")
     uio2 = MMapFileHWIO("/dev/uio2")
     uio3 = MMapFileHWIO("/dev/uio3")
-    uio4 = MMapFileHWIO("/dev/uio4")
 
     # Create the RAL
     ral = my_soc.get_ral()
 
     # Attach HWIO to the respective components
-    ral.awesome_A.attach_hwio(uio1)
-    ral.awesome_B.attach_hwio(uio2)
-    ral.splendid_X.attach_hwio(uio3)
-    ral.splendid_Y.attach_hwio(uio4)
+    ral.awesome_A.attach_hwio(uio0)
+    ral.awesome_B.attach_hwio(uio1)
+    ral.splendid_X.attach_hwio(uio2)
+    ral.splendid_Y.attach_hwio(uio3)

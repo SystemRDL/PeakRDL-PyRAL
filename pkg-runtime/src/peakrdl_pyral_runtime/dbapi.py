@@ -94,10 +94,23 @@ class DBAPI:
         cur.close()
 
         import_path = row["import_path"]
-        # TODO: Make sure import errors result in a helpful error.
-        #   Ensure it tells the user what is wrong
-        ref_module = importlib.import_module(import_path, self.origin_module_name)
-        new_dbapi: DBAPI = ref_module._get_dbapi()
+        try:
+            ref_module = importlib.import_module(import_path, self.origin_module_name)
+        except ImportError as exc:
+            raise ImportError(
+                f"Failed to import grafted PyRAL module '{import_path}' while resolving an "
+                f"external reference from RAL package '{self.origin_module_name}. "
+                "Ensure the module is installed and importable, and that PeakRDL "
+                "--graft-type path provided is correct."
+            ) from exc
+
+        get_dbapi = getattr(ref_module, "_get_dbapi", None)
+        if get_dbapi is None:
+            raise RuntimeError(
+                f"Grafted module '{import_path} (imported for RAL '{self.origin_module_name}) "
+                "does not define _get_dbapi(); expected a PeakRDL-PyRAL generated module."
+            )
+        new_dbapi: DBAPI = get_dbapi()
 
         # Child DBAPIs all share a common HWIO registry. Graft it in
         new_dbapi.hwio_registry = self.hwio_registry

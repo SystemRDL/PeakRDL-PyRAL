@@ -12,7 +12,7 @@ PeakRDL-PyRAL implements two major abstraction layers: The RAL and HWIO.
 Hardware I/O Abstraction Layer (HWIO)
     The HWIO layer defines how low-level read/write operations are initiated on
     the hardware. A HWIO layer may issue these accesses locally via a direct
-    memory mapping, via a hardware debugger like JTAG, or even remotely though
+    memory mapping, via a hardware debugger like JTAG, or even remotely through
     an SSH or telnet connection. Alternatively it could call read/write operations
     on a bus driver in a simulated environment like cocotb.
 

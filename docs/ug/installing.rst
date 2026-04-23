@@ -16,10 +16,30 @@ use-case, you may not need to install both of them every time.
     The exported RAL requires additional runtime files to be installed on the
     system that will run the RAL & application. This runtime package provides this.
 
-.. todo::
-    Add instructions on how to install the runtime on a device that cannot fetch from pypi
 
-    - pip download command for a specific platform
-    - copy wheels over
-    - install within the device
-    - Mention that installing the runtime as part of the rootfs may be preferred
+Installing the runtime without PyPI
+------------------------------------
+Targets that cannot reach PyPI (embedded devices, air-gapped networks) can still
+install ``peakrdl-pyral-runtime`` from wheels you fetch ahead of time.
+
+On a machine with network access, download the wheel as follows:
+
+.. code-block:: bash
+
+    mkdir wheels
+    python3 -m pip download peakrdl-pyral-runtime -d wheels
+
+Since the runtime is implemented in pure Python, the weel is implicitly
+platform-independent.
+
+Copy the ``wheels/`` directory to the device, then install from disk without
+contacting an index:
+
+.. code-block:: bash
+
+   python3 -m pip install --no-index --find-links=wheels peakrdl-pyral-runtime
+
+
+.. note::
+    For custom OS images, it is often preferable to install the runtime wheel
+    during image build so the package included on the rootfs.

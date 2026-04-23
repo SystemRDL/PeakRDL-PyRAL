@@ -5,7 +5,7 @@ HWIO
 
 The PyRAL runtime library provides several built-in HWIO classes that you can use
 
-.. list-table:: Frozen Delights!
+.. list-table::
     :header-rows: 1
 
     *   - Class
