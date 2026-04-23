@@ -1,0 +1,216 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+      - 'dev/**'
+  pull_request:
+    branches: [ main ]
+  release:
+    types:
+      - published
+
+jobs:
+  build-exporter:
+    name: Build exporter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        name: Install Python
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install build
+
+      - name: Build
+        run: |
+          python -m build pkg-exporter -o dist/
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-exporter
+          path: |
+            dist/*.tar.gz
+            dist/*.whl
+
+  build-runtime:
+    name: Build runtime
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        name: Install Python
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install build
+
+      - name: Build
+        run: |
+          python -m build pkg-runtime -o dist/
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-runtime
+          path: |
+            dist/*.tar.gz
+            dist/*.whl
+#-------------------------------------------------------------------------------
+  test:
+    needs:
+      - build-exporter
+      - build-runtime
+    strategy:
+      matrix:
+        python-version:
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+        include:
+          - os: ubuntu-24.04
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-exporter
+          path: dist
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-runtime
+          path: dist
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r test/requirements.txt
+
+      - name: Install
+        run: |
+          python -m pip install dist/peakrdl_pyral-*.whl
+          python -m pip install dist/peakrdl_pyral_runtime-*.whl
+
+      - name: Test
+        run: |
+          cd test
+          pytest --cov=peakrdl_pyral --cov=peakrdl_pyral_runtime
+
+      - name: Coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_PARALLEL: true
+        run: |
+          cd test
+          coveralls --service=github
+
+  finish_coveralls:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+
+      - name: Coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_PARALLEL: true
+        run: |
+          python -m pip install -U coveralls>=3.0.0
+          coveralls --service=github --finish
+
+#-------------------------------------------------------------------------------
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r test/requirements.txt
+
+      - name: Install
+        run: |
+          python -m pip install ./pkg-exporter[cli]
+          python -m pip install ./pkg-runtime
+
+      - name: Run Lint
+        run: |
+          pylint --rcfile test/pylint.rc pkg-exporter/src/peakrdl_pyral
+          pylint --rcfile test/pylint.rc pkg-runtime/src/peakrdl_pyral_runtime
+
+#-------------------------------------------------------------------------------
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r test/requirements.txt
+
+      - name: Install
+        run: |
+          python -m pip install ./pkg-exporter[cli]
+          python -m pip install ./pkg-runtime
+
+      - name: Type Check
+        run: |
+          mypy --config-file test/mypy.ini pkg-exporter/src/peakrdl_pyral
+          mypy --config-file test/mypy.ini pkg-runtime/src/peakrdl_pyral_runtime
+
+#-------------------------------------------------------------------------------
+  deploy:
+    needs:
+      - test
+      - lint
+      - mypy
+      - build-exporter
+      - build-runtime
+
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+
+    # Only publish when a GitHub Release is created.
+    if: github.event_name == 'release'
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-exporter
+          path: dist
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-runtime
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

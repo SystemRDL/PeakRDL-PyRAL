@@ -8,9 +8,6 @@ from .base import HWIO
 
 class _MMapHWIO(HWIO):
     def __init__(self, path: str, offset: int, size: int) -> None:
-        if size is None:
-            size = os.stat(path).st_size
-
         # Adjust the start of the mmap window to align with a page boundary
         page_offset = offset % mmap.PAGESIZE
         offset -= page_offset

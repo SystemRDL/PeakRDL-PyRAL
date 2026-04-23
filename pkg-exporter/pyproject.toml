@@ -37,9 +37,9 @@ cli = [
 ]
 
 [project.urls]
-Source = "https://github.com/SystemRDL/PeakRDL-pyral"
-Tracker = "https://github.com/SystemRDL/PeakRDL-pyral/issues"
-Changelog = "https://github.com/SystemRDL/PeakRDL-pyral/releases"
+Source = "https://github.com/SystemRDL/PeakRDL-PyRAL"
+Tracker = "https://github.com/SystemRDL/PeakRDL-PyRAL/issues"
+Changelog = "https://github.com/SystemRDL/PeakRDL-PyRAL/releases"
 Documentation = "https://peakrdl-pyral.readthedocs.io/"
 
 [tool.setuptools.dynamic]
