@@ -39,9 +39,9 @@ class RootDefinition:
 
 
 class TypeStubGenerator:
-    def __init__(self, pyi_path: str, external_types: dict[str, str]) -> None:
+    def __init__(self, pyi_path: str, graft_types: dict[str, str]) -> None:
         self._path = pyi_path
-        self.external_types = external_types
+        self.graft_types = graft_types
 
         # RootDefinitions that have been accumulated.
         # This gets built in reverse order
@@ -49,7 +49,7 @@ class TypeStubGenerator:
         self._root_defs: dict[str, RootDefinition] = OrderedDict()
 
     def node_is_external(self, node: AddressableNode) -> bool:
-        return self.node_is_in_root_ns(node) and (node.type_name in self.external_types)
+        return self.node_is_in_root_ns(node) and (node.type_name in self.graft_types)
 
     def node_is_in_root_ns(self, node: AddressableNode) -> bool:
         return node.get_scope_path() == ""
@@ -114,7 +114,7 @@ class TypeStubGenerator:
                     child_type_name = f"{child.type_name}_Register"
                 else:
                     child_type_name = f"{child.type_name}_Group"
-                current_rootdef.external_dependencies[child_type_name] = self.external_types[child.type_name]
+                current_rootdef.external_dependencies[child_type_name] = self.graft_types[child.type_name]
             elif self.node_is_in_root_ns(child):
                 assert child.type_name is not None # is in root ns. Always has type name
                 if child.type_name not in self._root_defs:

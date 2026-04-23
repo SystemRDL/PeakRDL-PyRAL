@@ -8,7 +8,7 @@ PeakRDL-PyRAL is a register abstraction layer (RAL) generator that provides a
 lightweight Python interface to your hardware.
 
 * SQLite3-based RAL back-end. Compact output.
-* Scalable: Good for tiny designs to enormous SoCs. Loads quickly and keeps a low memory footprint.
+* Scalable: Good for tiny designs to enormous SoCs. Loads quickly and keeps the memory footprint small.
 * Fully typed RAL output. Enjoy the benefits of static type checking and autocomplete in popular Python IDEs.
 
 

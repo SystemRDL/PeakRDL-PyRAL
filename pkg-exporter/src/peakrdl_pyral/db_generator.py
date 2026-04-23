@@ -23,9 +23,9 @@ class TypeID(enum.Enum):
 
 
 class DBGenerator:
-    def __init__(self, db_path: str, external_types: dict[str, str]) -> None:
+    def __init__(self, db_path: str, graft_types: dict[str, str]) -> None:
         self._init_db(db_path)
-        self.external_types = external_types
+        self.graft_types = graft_types
 
     def _init_db(self, db_path: str) -> None:
         # Create new sqlite DB
@@ -83,10 +83,10 @@ class DBGenerator:
             if isinstance(child, (AddrmapNode, MemNode, RegfileNode)):
                 if (
                     child.get_scope_path() == "" # Was declared in the root namespace
-                    and (child.type_name in self.external_types) # Is marked as an external type
+                    and (child.type_name in self.graft_types) # Is marked as an external type
                 ):
                     # Export this as an external reference
-                    import_path = self.external_types[child.type_name]
+                    import_path = self.graft_types[child.type_name]
                     self.add_external_group(child, this_dbid, import_path)
                 else:
                     self.generate_group(child, this_dbid)

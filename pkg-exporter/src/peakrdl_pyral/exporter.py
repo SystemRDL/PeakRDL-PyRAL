@@ -8,18 +8,18 @@ from .db_generator import DBGenerator
 from .type_stub_generator import TypeStubGenerator
 
 class PyRALExporter:
-    def export(self, top_node: AddrmapNode, output_dir: str, external_types: Optional[dict[str, str]] = None) -> None:
-        if external_types is None:
-            external_types = {}
+    def export(self, top_node: AddrmapNode, output_dir: str, graft_types: Optional[dict[str, str]] = None) -> None:
+        if graft_types is None:
+            graft_types = {}
 
         db_path = os.path.join(output_dir, f"{top_node.inst_name}.db")
         pyi_path = os.path.join(output_dir, f"{top_node.inst_name}_stubs.pyi")
 
-        db_generator = DBGenerator(db_path, external_types)
+        db_generator = DBGenerator(db_path, graft_types)
         db_generator.generate_group(top_node)
         db_generator.finish()
 
-        ts_gen = TypeStubGenerator(pyi_path, external_types)
+        ts_gen = TypeStubGenerator(pyi_path, graft_types)
         ts_gen.generate(top_node)
 
         self._write_py_module(output_dir, top_node)

@@ -180,12 +180,15 @@ class HWIO(ABC):
         Classes that extend :class:`HWIO` shall provide an implementation for
         this method.
 
+        Callers will guarantee that ``addr`` is aligned to ``size``.
+
         Parameters
         ----------
         addr: int
             Address offset
         size: int
-            Access size in bytes
+            Access size in bytes. Typical sizes are 1, 2, 4 or 8 bytes.
+            If a given size is not supported, the implementation shall raise ``NotImplementedError``
 
         Returns
         -------
@@ -201,6 +204,8 @@ class HWIO(ABC):
         Classes that extend :class:`HWIO` shall provide an implementation for
         this method.
 
+        Callers will guarantee that ``addr`` is aligned to ``size``.
+
         Parameters
         ----------
         addr: int
@@ -208,7 +213,8 @@ class HWIO(ABC):
         data: int
             Data to write
         size: int
-            Access size in bytes
+            Access size in bytes. Typical sizes are 1, 2, 4 or 8 bytes.
+            If a given size is not supported, the implementation shall raise ``NotImplementedError``
         """
         raise NotImplementedError
 
