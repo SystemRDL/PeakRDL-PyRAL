@@ -6,6 +6,13 @@ from ctypes import c_uint8, c_uint16, c_uint32, c_uint64
 
 from .base import HWIO
 
+CTYPE_MAP: dict[int, Type[Union[c_uint8, c_uint16, c_uint32, c_uint64]]] = {
+    1: c_uint8,
+    2: c_uint16,
+    4: c_uint32,
+    8: c_uint64,
+}
+
 class _MMapHWIO(HWIO):
     def __init__(self, path: str, offset: int, size: int) -> None:
         # Adjust the start of the mmap window to align with a page boundary
@@ -30,23 +37,12 @@ class _MMapHWIO(HWIO):
         self._mm.close()
         os.close(self._f)
 
-    def _ctype_from_size(self, size: int) -> Type[Union[c_uint8, c_uint16, c_uint32, c_uint64]]:
-        if size == 4:
-            return c_uint32
-        if size == 8:
-            return c_uint64
-        if size == 1:
-            return c_uint8
-        if size == 2:
-            return c_uint16
-        raise ValueError(f"Invalid access size: {size}")
-
     def _read_impl(self, addr: int, size: int) -> int:
-        ct = self._ctype_from_size(size)
+        ct = CTYPE_MAP[size]
         return ct.from_buffer(self._mm, addr).value
 
     def _write_impl(self, addr: int, data: int, size: int) -> None:
-        ct = self._ctype_from_size(size)
+        ct = CTYPE_MAP[size]
         ct.from_buffer(self._mm, addr).value = data
 
     def _read_bytes_impl(self, addr: int, size: int) -> bytearray:

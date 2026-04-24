@@ -30,6 +30,9 @@ The PyRAL runtime library provides several built-in HWIO classes that you can us
         - If you want to manually map to a sub-region of ``/dev/mem`` using a
           physical address and region size
 
+    *   - :class:`~peakrdl_pyral_runtime.hwio.openocd.OpenOCDHWIO`
+        - Connect to a device using an OpenOCD debugger.
+
 
 .. toctree::
     :hidden:
@@ -38,3 +41,4 @@ The PyRAL runtime library provides several built-in HWIO classes that you can us
     hwio-demo
     hwio-callback
     hwio-mmap
+    hwio-openocd
