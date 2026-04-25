@@ -1,6 +1,6 @@
 import socket
 
-from .base import HWIO
+from . import HWIO
 
 # All OpenOCD RPC messages are terminated with this token
 RPC_TERM = b"\x1a"

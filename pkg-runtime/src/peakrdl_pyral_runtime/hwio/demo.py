@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from .base import HWIO
+from . import HWIO
 
 class DemoHWIO(HWIO):
     def __init__(self, *, offset: int = 0) -> None:

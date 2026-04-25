@@ -11,7 +11,7 @@ The PyRAL runtime library provides several built-in HWIO classes that you can us
     *   - Class
         - Description
 
-    *   - :class:`~peakrdl_pyral_runtime.hwio.base.HWIO`
+    *   - :class:`~peakrdl_pyral_runtime.hwio.HWIO`
         - Abstract base class for all HWIO implementations.
           If you want to build your own HWIO, extend from this.
 

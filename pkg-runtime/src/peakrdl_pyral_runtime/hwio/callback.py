@@ -1,5 +1,5 @@
 from typing import Callable
-from .base import HWIO
+from . import HWIO
 
 class CallbackHWIO(HWIO):
     def __init__(self, read_cb: Callable[[int, int], int], write_cb: Callable[[int, int, int], None], *, offset: int = 0) -> None:

@@ -7,7 +7,7 @@ import weakref
 
 from .model import RALRegister, RALField, RALGroup, RALArray, RegValue
 from .model import AddressableRALNode
-from .hwio.base import HWIO
+from .hwio import HWIO
 
 class HWIORegistry:
     """
