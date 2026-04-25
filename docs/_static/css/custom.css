@@ -1,0 +1,6 @@
+/* Make the announcement banner more visible */
+.bd-header-announcement {
+    background-color: #ff6000;
+    color: #fff;
+    font-weight: bold;
+}
