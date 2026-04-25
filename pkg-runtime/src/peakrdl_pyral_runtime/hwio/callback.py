@@ -25,7 +25,7 @@ class CallbackHWIO(HWIO):
 
             .. code-block:: python
 
-                def write_cb(addr: int, data: int, size: int) -> None: ...
+                def write_cb(addr: int, value: int, size: int) -> None: ...
 
         offset: int
             Additional address offset to add to all HWIO transactions
@@ -37,5 +37,5 @@ class CallbackHWIO(HWIO):
     def _read_impl(self, addr: int, size: int) -> int:
         return self._read_cb(addr, size)
 
-    def _write_impl(self, addr: int, data: int, size: int) -> None:
-        self._write_cb(addr, data, size)
+    def _write_impl(self, addr: int, value: int, size: int) -> None:
+        self._write_cb(addr, value, size)

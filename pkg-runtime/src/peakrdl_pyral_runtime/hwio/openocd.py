@@ -70,6 +70,6 @@ class OpenOCDHWIO(HWIO):
         resp = self._cmd(f"md{suffix} phys {addr:#x}")
         return int(resp.partition(":")[2], 16)
 
-    def _write_impl(self, addr: int, data: int, size: int) -> None:
+    def _write_impl(self, addr: int, value: int, size: int) -> None:
         suffix = SUFFIX_MAP[size]
-        self._cmd(f"mw{suffix} phys {addr:#x} {data:#x}")
+        self._cmd(f"mw{suffix} phys {addr:#x} {value:#x}")

@@ -23,8 +23,8 @@ GROUP_RESERVED_WORDS = COMMON_RESERVED_WORDS | {
 }
 
 REGISTER_RESERVED_WORDS = COMMON_RESERVED_WORDS | {
-    "width",
-    "accesswidth",
+    "size",
+    "access_size",
     "read_fields",
     "write_fields",
     "change_fields",

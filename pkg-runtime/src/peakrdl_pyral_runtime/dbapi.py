@@ -213,8 +213,8 @@ class DBAPI:
                 row["dbid"],
                 name,
                 parent.address + row["offset"] + array_offset,
-                row["size"],
-                row["accesswidth"],
+                row["size"] // 8, # FIXME: move this division into the exporter
+                row["accesswidth"] // 8, # FIXME: move this division into the exporter
             )
         elif type_id == self.TypeID.Group.value:
             assert isinstance(parent, RALGroup)

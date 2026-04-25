@@ -24,7 +24,7 @@ class DemoHWIO(HWIO):
             value |= (self.mem[addr + i] << (8 * i))
         return value
 
-    def _write_impl(self, addr: int, data: int, size: int) -> None:
+    def _write_impl(self, addr: int, value: int, size: int) -> None:
         for i in range(size):
-            self.mem[addr + i] = data & 0xFF
-            data >>= 8
+            self.mem[addr + i] = value & 0xFF
+            value >>= 8

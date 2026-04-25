@@ -28,26 +28,26 @@ class TestAccess(PyRALTestcase):
 
 
         # Simple read/write from sub-block
-        ral.sub2[1].write(0x10, 0x4321, 16)
+        ral.sub2[1].write(0x10, 0x4321, 2)
         self.assertListEqual(hwio.get_latest_xfers(), [
             ("W", 0x2090, 2, 0x4321),
         ])
         self.assertEqual(hwio.mem[0x2090], 0x21)
         self.assertEqual(hwio.mem[0x2091], 0x43)
-        self.assertEqual(ral.sub2[1].read(0x10, 16), 0x4321)
+        self.assertEqual(ral.sub2[1].read(0x10, 2), 0x4321)
         self.assertListEqual(hwio.get_latest_xfers(), [
             ("R", 0x2090, 2, None),
         ])
 
 
         # Write/read list
-        ral.write_list(0x80, [0x1234, 0x5678, 0xABCD], 16)
+        ral.write_list(0x80, [0x1234, 0x5678, 0xABCD], 2)
         self.assertListEqual(hwio.get_latest_xfers(), [
             ("W", 0x80, 2, 0x1234),
             ("W", 0x82, 2, 0x5678),
             ("W", 0x84, 2, 0xABCD),
         ])
-        self.assertListEqual(ral.read_list(0x80, 3, 16), [0x1234, 0x5678, 0xABCD])
+        self.assertListEqual(ral.read_list(0x80, 3, 2), [0x1234, 0x5678, 0xABCD])
         self.assertListEqual(hwio.get_latest_xfers(), [
             ("R", 0x80, 2, None),
             ("R", 0x82, 2, None),

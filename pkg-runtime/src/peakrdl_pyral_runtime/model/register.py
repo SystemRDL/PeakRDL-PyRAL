@@ -14,15 +14,15 @@ class RALRegister(AddressableRALNode):
     """
     Represents a register.
     """
-    def __init__(self, parent: "RALGroup", dbapi: "DBAPI", dbid: int, name: str, address: int, width: int, accesswidth: int) -> None:
+    def __init__(self, parent: "RALGroup", dbapi: "DBAPI", dbid: int, name: str, address: int, size: int, access_size: int) -> None:
         super().__init__(parent, dbapi, dbid, name, address)
         self.parent: "RALGroup"
 
-        #: Register's width in bits
-        self.width = width
+        #: Register's size in bytes
+        self.size = size
 
-        #: Register's access width in bits
-        self.accesswidth = accesswidth
+        #: Register's access size in bytes
+        self.access_size = access_size
 
     def read(self) -> int:
         """
@@ -30,7 +30,17 @@ class RALRegister(AddressableRALNode):
         """
         hwio, hwio_addr_offset = self._lookup_hwio()
         addr = self.address - hwio_addr_offset
-        return hwio.read(addr, self.width, self.accesswidth)
+
+        if self.size == self.access_size:
+            return hwio.read(addr, self.access_size)
+        else:
+            # Is wide register. Read low-to-high address
+            n_subwords = self.size // self.access_size
+            result = 0
+            for i in range(n_subwords):
+                subword = hwio.read(addr + i * self.access_size, self.access_size)
+                result |= subword << (i * self.access_size * 8)
+            return result
 
     def write(self, value: int) -> None:
         """
@@ -43,7 +53,17 @@ class RALRegister(AddressableRALNode):
         """
         hwio, hwio_addr_offset = self._lookup_hwio()
         addr = self.address - hwio_addr_offset
-        hwio.write(addr, value, self.width, self.accesswidth)
+
+        if self.size == self.access_size:
+            hwio.write(addr, value, self.access_size)
+        else:
+            # Accessing a wide register. Issue multiple accesses
+            n_subwords = self.size // self.access_size
+            accesswidth = self.access_size * 8
+            mask = (1 << accesswidth) - 1
+            for i in range(n_subwords):
+                hwio.write(addr + i * self.access_size, value & mask, self.access_size)
+                value >>= accesswidth
 
     def read_fields(self) -> RegValue:
         """

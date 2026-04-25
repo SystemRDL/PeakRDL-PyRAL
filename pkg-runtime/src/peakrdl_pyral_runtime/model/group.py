@@ -16,7 +16,7 @@ class RALGroup(AddressableRALNode):
         self.parent: Optional["RALGroup"]
 
 
-    def read(self, offset: int, accesswidth: int = 32) -> int:
+    def read(self, offset: int, size: int = 4) -> int:
         """
         Perform a read operation from an address offset relative to this node's address.
 
@@ -24,9 +24,10 @@ class RALGroup(AddressableRALNode):
         ----------
         offset: int
             Offset relative to this node's address to read. Resulting absolute
-            address shall be aligned to the access width.
-        accesswidth: int
-            Access width in bits. Shall be 8, 16, 32, or 64.
+            address shall be aligned to the access size.
+        size: int
+            Size of the access in bytes.
+            Shall be 1, 2, 4, or 8.
 
         Returns
         -------
@@ -35,9 +36,9 @@ class RALGroup(AddressableRALNode):
         """
         hwio, hwio_addr_offset = self._lookup_hwio()
         addr = self.address - hwio_addr_offset + offset
-        return hwio.read(addr, accesswidth, accesswidth)
+        return hwio.read(addr, size)
 
-    def read_list(self, offset: int, n_words: int, accesswidth: int = 32) -> list[int]:
+    def read_list(self, offset: int, n_words: int, size: int = 4) -> list[int]:
         """
         Read a contiguous list of words relative to this node's address.
 
@@ -47,18 +48,18 @@ class RALGroup(AddressableRALNode):
             Offset from this node's address.
         n_words: int
             Number of words to read.
-        accesswidth: int
-            Bit-width of the read access to use for each entry.
-            Shall be 8, 16, 32, or 64.
+        size: int
+            Size of the read access in bytes to use for each entry.
+            Shall be 1, 2, 4, or 8.
         """
         hwio, hwio_addr_offset = self._lookup_hwio()
         addr = self.address - hwio_addr_offset + offset
-        return hwio.read_list(addr, n_words, accesswidth)
+        return hwio.read_list(addr, n_words, size)
 
     def read_bytes(self, offset: int, size: int) -> bytearray:
         """
         Read a buffer of bytes relative to this node's address.
-        User shall make no assumptions on what underlying access width will be used.
+        User shall make no assumptions on what underlying access size will be used.
 
         Parameters
         ----------
@@ -76,7 +77,7 @@ class RALGroup(AddressableRALNode):
         addr = self.address - hwio_addr_offset + offset
         return hwio.read_bytes(addr, size)
 
-    def write(self, offset: int, value: int, accesswidth: int = 32) -> None:
+    def write(self, offset: int, value: int, size: int = 4) -> None:
         """
         Perform a write operation to an address offset relative to this node's address.
 
@@ -84,17 +85,18 @@ class RALGroup(AddressableRALNode):
         ----------
         offset: int
             Offset relative to this node's address to write. Resulting absolute
-            address shall be aligned to the access width.
+            address shall be aligned to the access size.
         value: int
             Value to write
-        accesswidth: int
-            Access width in bits. Shall be 8, 16, 32, or 64.
+        size: int
+            Size of the access in bytes.
+            Shall be 1, 2, 4, or 8.
         """
         hwio, hwio_addr_offset = self._lookup_hwio()
         addr = self.address - hwio_addr_offset + offset
-        hwio.write(addr, value, accesswidth, accesswidth)
+        hwio.write(addr, value, size)
 
-    def write_list(self, offset: int, data: list[int], accesswidth: int = 32) -> None:
+    def write_list(self, offset: int, data: list[int], size: int = 4) -> None:
         """
         Write a contiguous list of words relative to this node's address.
 
@@ -104,18 +106,18 @@ class RALGroup(AddressableRALNode):
             Offset from this node's address.
         data: list[int]
             List of words to write.
-        accesswidth: int
-            Bit-width of the write access to use for each entry.
-            Shall be 8, 16, 32, or 64.
+        size: int
+            Size of the write access in bytes to use for each entry.
+            Shall be 1, 2, 4, or 8.
         """
         hwio, hwio_addr_offset = self._lookup_hwio()
         addr = self.address - hwio_addr_offset + offset
-        hwio.write_list(addr, data, accesswidth)
+        hwio.write_list(addr, data, size)
 
     def write_bytes(self, offset: int, data: Union[bytes, bytearray]) -> None:
         """
         Write a buffer of bytes relative to this node's address.
-        User shall make no assumptions on what underlying access width will be used.
+        User shall make no assumptions on what underlying access size will be used.
 
         Parameters
         ----------

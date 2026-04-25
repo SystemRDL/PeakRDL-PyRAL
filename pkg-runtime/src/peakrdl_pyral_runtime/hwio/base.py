@@ -13,7 +13,7 @@ class HWIO(ABC):
         """
         self._offset = offset
 
-    def read_list(self, offset: int, n_words: int, accesswidth: int = 32) -> list[int]:
+    def read_list(self, offset: int, n_words: int, size: int = 4) -> list[int]:
         """
         Read a contiguous list of words from the hardware
 
@@ -23,9 +23,9 @@ class HWIO(ABC):
             Address offset.
         n_words: int
             Number of words to read.
-        accesswidth: int
-            Bit-width of the read access to use for each entry.
-            Shall be 8, 16, 32, or 64.
+        size: int
+            Size of the read access in bytes to use for each entry.
+            Shall be 1, 2, 4, or 8.
 
         Returns
         -------
@@ -33,17 +33,16 @@ class HWIO(ABC):
             List of values read
         """
         addr = self._offset + offset
-        bpw = accesswidth // 8
-        if addr % bpw != 0:
-            raise ValueError(f"Access at address 0x{addr:x} is not {accesswidth}-bit aligned")
+        if addr % size != 0:
+            raise ValueError(f"Access at address 0x{addr:x} is not {size}-byte aligned")
 
         words = []
         for _ in range(n_words):
-            words.append(self._read_impl(addr, bpw))
-            addr += bpw
+            words.append(self._read_impl(addr, size))
+            addr += size
         return words
 
-    def write_list(self, offset: int, data: list[int], accesswidth: int = 32) -> None:
+    def write_list(self, offset: int, data: list[int], size: int = 4) -> None:
         """
         Write a contiguous list of words to the hardware
 
@@ -53,34 +52,29 @@ class HWIO(ABC):
             Address offset.
         data: list[int]
             List of words to write.
-        accesswidth: int
-            Bit-width of the write access to use for each entry.
-            Shall be 8, 16, 32, or 64.
+        size: int
+            Size of the write access in bytes to use for each entry.
+            Shall be 1, 2, 4, or 8.
         """
         addr = self._offset + offset
-        bpw = accesswidth // 8
-        if addr % bpw != 0:
-            raise ValueError(f"Access at address 0x{addr:x} is not {accesswidth}-bit aligned")
+        if addr % size != 0:
+            raise ValueError(f"Access at address 0x{addr:x} is not {size}-byte aligned")
 
         for word in data:
-            self._write_impl(addr, word, bpw)
-            addr += bpw
+            self._write_impl(addr, word, size)
+            addr += size
 
-    def read(self, offset: int, regwidth: int, accesswidth: int) -> int:
+    def read(self, offset: int, size: int = 4) -> int:
         """
         Read a single register.
-
-        If regwidth > accesswidth, then the read operation will be performed as
-        multiple sequential sub-word reads.
 
         Parameters
         ----------
         offset: int
             Address offset
-        regwidth: int
-            Register width in bits. Shall be 8, 16, 32, or 64.
-        accesswidth: int
-            Access width in bits. Shall be 8, 16, 32, or 64.
+        size: int
+            Size of the access in bytes.
+            Shall be 1, 2, 4, or 8.
 
         Returns
         -------
@@ -88,27 +82,13 @@ class HWIO(ABC):
             Read value
         """
         addr = self._offset + offset
-        bpw = accesswidth // 8
-        if addr % bpw != 0:
-            raise ValueError(f"Access at address 0x{addr:x} is not {accesswidth}-bit aligned")
+        if addr % size != 0:
+            raise ValueError(f"Access at address 0x{addr:x} is not {size}-byte aligned")
+        return self._read_impl(addr, size)
 
-        if regwidth == accesswidth:
-            return self._read_impl(addr, bpw)
-        else:
-            # Is wide register. Read low-to-high address
-            n_subwords = regwidth // accesswidth
-            result = 0
-            for i in range(n_subwords):
-                subword = self._read_impl(addr + i * bpw, bpw)
-                result |= subword << (i * accesswidth)
-            return result
-
-    def write(self, offset: int, data: int, regwidth: int, accesswidth: int) -> None:
+    def write(self, offset: int, value: int, size: int = 4) -> None:
         """
         Write a single register.
-
-        If regwidth > accesswidth, then the write operation will be performed as
-        multiple sequential sub-word writes.
 
         Parameters
         ----------
@@ -116,30 +96,20 @@ class HWIO(ABC):
             Address offset
         data: int
             Value to write
-        regwidth: int
-            Register width. Shall be 8, 16, 32, or 64.
-        accesswidth: int
-            Access width. Shall be 8, 16, 32, or 64.
+        size: int
+            Size of the access in bytes.
+            Shall be 1, 2, 4, or 8.
         """
         addr = self._offset + offset
-        bpw = accesswidth // 8
-        if addr % bpw != 0:
-            raise ValueError(f"Access at address 0x{addr:x} is not {accesswidth}-bit aligned")
+        if addr % size != 0:
+            raise ValueError(f"Access at address 0x{addr:x} is not {size}-byte aligned")
 
-        if regwidth == accesswidth:
-            self._write_impl(addr, data, bpw)
-        else:
-            # Accessing a wide register. Issue multiple accesses
-            n_subwords = regwidth // accesswidth
-            mask = (1 << accesswidth) - 1
-            for i in range(n_subwords):
-                self._write_impl(addr + i * bpw, data & mask, bpw)
-                data >>= accesswidth
+        self._write_impl(addr, value, size)
 
     def read_bytes(self, offset: int, size: int) -> bytearray:
         """
         Read a buffer of bytes from the device.
-        User shall make no assumptions on what underlying access width will be used.
+        User shall make no assumptions on what underlying access size will be used.
 
         Parameters
         ----------
@@ -159,7 +129,7 @@ class HWIO(ABC):
     def write_bytes(self, offset: int, data: Union[bytes, bytearray]) -> None:
         """
         Write a buffer of bytes to the device.
-        User shall make no assumptions on what underlying access width will be used.
+        User shall make no assumptions on what underlying access size will be used.
 
         Parameters
         ----------
@@ -198,7 +168,7 @@ class HWIO(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _write_impl(self, addr: int, data: int, size: int) -> None:
+    def _write_impl(self, addr: int, value: int, size: int) -> None:
         """
         Implementation of a hardware write operation.
         Classes that extend :class:`HWIO` shall provide an implementation for
@@ -210,8 +180,8 @@ class HWIO(ABC):
         ----------
         addr: int
             Address offset
-        data: int
-            Data to write
+        value: int
+            Value to write
         size: int
             Access size in bytes. Typical sizes are 1, 2, 4 or 8 bytes.
             If a given size is not supported, the implementation shall raise ``NotImplementedError``

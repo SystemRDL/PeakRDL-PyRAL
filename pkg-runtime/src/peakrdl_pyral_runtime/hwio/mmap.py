@@ -41,13 +41,13 @@ class _MMapHWIO(HWIO):
         ct = CTYPE_MAP[size]
         return ct.from_buffer(self._mm, addr).value
 
-    def _write_impl(self, addr: int, data: int, size: int) -> None:
+    def _write_impl(self, addr: int, value: int, size: int) -> None:
         ct = CTYPE_MAP[size]
-        ct.from_buffer(self._mm, addr).value = data
+        ct.from_buffer(self._mm, addr).value = value
 
     def _read_bytes_impl(self, addr: int, size: int) -> bytearray:
         self._mm.seek(addr)
-        return bytearray(self._mm.read())
+        return bytearray(self._mm.read(size))
 
     def _write_bytes_impl(self, addr: int, data: Union[bytes, bytearray]) -> None:
         self._mm.seek(addr)
