@@ -19,6 +19,10 @@ The PyRAL runtime library provides several built-in HWIO classes that you can us
         - Demonstration HWIO implementation for testing purposes.
           Does not require any actual hardware.
 
+    *   - :class:`~peakrdl_pyral_runtime.hwio.mirror.MirroredHWIOWrapper`
+        - HWIO wrapper class that allows you to manipulate registers though a
+          mirrored the state of hardware.
+
     *   - :class:`~peakrdl_pyral_runtime.hwio.callback.CallbackHWIO`
         - Pass your own existing read/write methods to this callback wrapper.
 
@@ -39,6 +43,7 @@ The PyRAL runtime library provides several built-in HWIO classes that you can us
 
     hwio-base
     hwio-demo
+    hwio-mirror
     hwio-callback
     hwio-mmap
     hwio-openocd
