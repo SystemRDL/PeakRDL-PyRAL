@@ -110,10 +110,9 @@ class TypeStubGenerator:
         for child in children:
             if self.node_is_external(child):
                 assert child.type_name is not None # was implicitly selected as a root component
-                if isinstance(child, RegNode):
-                    child_type_name = f"{child.type_name}_Register"
-                else:
-                    child_type_name = f"{child.type_name}_Group"
+                # External nodes are always Groups
+                assert not isinstance(child, RegNode)
+                child_type_name = f"{child.type_name}_Group"
                 current_rootdef.external_dependencies[child_type_name] = self.graft_types[child.type_name]
             elif self.node_is_in_root_ns(child):
                 assert child.type_name is not None # is in root ns. Always has type name

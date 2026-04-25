@@ -1,0 +1,5 @@
+addrmap name_collisions {
+    reg {
+        field {} access_size;
+    } size;
+};

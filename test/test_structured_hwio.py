@@ -26,6 +26,10 @@ class TestStructuredHWIO(PyRALTestcase):
         sub_hwio = MockHWIO()
         sub_s2_hwio = MockHWIO()
 
+        # Should fail due to no HWIO attached yet
+        with self.assertRaises(LookupError):
+            ral.read(0)
+
         # Attach them to various parts of the RAL
         ral.attach_hwio(root_hwio)
         ral.s0.attach_hwio(s0_hwio)

@@ -28,6 +28,7 @@ class TestRAL(PyRALTestcase):
                 "<RALGroup: structural.sub1>",
                 "<RALArray of RALGroup: structural.sub2[]>",
                 "<RALRegister: structural.r2>",
+                "<RALGroup: structural.my_mem>",
             ]
         )
 

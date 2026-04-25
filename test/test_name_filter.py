@@ -25,3 +25,12 @@ class TestNameFilter(PyRALTestcase):
 
         self.assertSetEqual(group_reserved_words, GROUP_RESERVED_WORDS)
         self.assertSetEqual(reg_reserved_words, REGISTER_RESERVED_WORDS)
+
+    def test_collisons_renamed(self) -> None:
+        self.export([
+            "rdl_src/name_collisions.rdl"
+        ])
+
+        import name_collisions
+        ral = name_collisions.get_ral()
+        ral.size_.access_size_

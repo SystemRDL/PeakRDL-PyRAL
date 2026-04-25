@@ -35,4 +35,9 @@ addrmap structural {
     } r2 @ 0x3000;
 
     signal {} my_signal;
+
+    mem {
+        mementries = 64;
+        memwidth = 32;
+    } external my_mem @ 0x4000;
 };
