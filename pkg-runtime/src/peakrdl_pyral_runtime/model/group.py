@@ -11,8 +11,8 @@ class RALGroup(AddressableRALNode):
     Represents an intermediate RAL hierarchy that may contain
     :class:`RALGroup` or :class:`RALRegister` members.
     """
-    def __init__(self, parent: Optional["RALGroup"], dbapi: "DBAPI", dbid: int, name: str, address: int) -> None:
-        super().__init__(parent, dbapi, dbid, name, address)
+    def __init__(self, parent: Optional["RALGroup"], dbapi: "DBAPI", dbid: int, name: str, address: int, size: int) -> None:
+        super().__init__(parent, dbapi, dbid, name, address, size)
         self.parent: Optional["RALGroup"]
 
 

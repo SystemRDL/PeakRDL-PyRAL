@@ -55,7 +55,7 @@ class DBGenerator:
                 offset INTEGER,         -- [all] address offset | bit-offset for field
                 dims TEXT,              -- [g|r] array dimensions. Comma-separated hex strings
                 stride INTEGER,         -- [g|r] array stride
-                size INTEGER,           -- [r|f] reg size | fieldwidth
+                size INTEGER,           -- [g|r|f] reg size | fieldwidth
                 access_size INTEGER     -- [r]
             )
         """)
@@ -111,7 +111,7 @@ class DBGenerator:
                 ?,    -- offset
                 ?,    -- dims
                 ?,    -- stride
-                NULL, -- size
+                ?,    -- size
                 NULL  -- access_size
             ) RETURNING dbid
         """, (
@@ -121,6 +121,7 @@ class DBGenerator:
             node.raw_address_offset,
             dims,
             stride,
+            node.size,
         ))
         dbid = res.fetchone()[0]
         cur.close()
@@ -144,7 +145,7 @@ class DBGenerator:
                 ?,    -- offset
                 ?,    -- dims
                 ?,    -- stride
-                NULL, -- size
+                ?,    -- size
                 NULL  -- access_size
             ) RETURNING dbid
         """, (
@@ -154,6 +155,7 @@ class DBGenerator:
             node.raw_address_offset,
             dims,
             stride,
+            node.size,
         ))
         dbid = res.fetchone()[0]
 

@@ -5,6 +5,7 @@ COMMON_RESERVED_WORDS = {
     "name",
     "path",
     "address",
+    "size",
     "_hwio",
     "_lookup_hwio",
     "children",
@@ -23,7 +24,6 @@ GROUP_RESERVED_WORDS = COMMON_RESERVED_WORDS | {
 }
 
 REGISTER_RESERVED_WORDS = COMMON_RESERVED_WORDS | {
-    "size",
     "access_size",
     "read_fields",
     "write_fields",

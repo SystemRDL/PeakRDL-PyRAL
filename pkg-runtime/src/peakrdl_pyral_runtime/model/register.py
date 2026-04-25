@@ -15,11 +15,8 @@ class RALRegister(AddressableRALNode):
     Represents a register.
     """
     def __init__(self, parent: "RALGroup", dbapi: "DBAPI", dbid: int, name: str, address: int, size: int, access_size: int) -> None:
-        super().__init__(parent, dbapi, dbid, name, address)
+        super().__init__(parent, dbapi, dbid, name, address, size)
         self.parent: "RALGroup"
-
-        #: Register's size in bytes
-        self.size = size
 
         #: Register's access size in bytes
         self.access_size = access_size

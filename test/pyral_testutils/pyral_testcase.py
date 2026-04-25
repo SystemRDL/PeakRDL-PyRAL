@@ -86,6 +86,7 @@ class PyRALTestcase(TestCase):
             if isinstance(node, AddressableNode):
                 assert isinstance(ral_node, pyral.AddressableRALNode)
                 self.assertEqual(node.absolute_address, ral_node.address)
+                self.assertEqual(node.size, ral_node.size)
             elif isinstance(node, FieldNode):
                 assert isinstance(ral_node, pyral.RALField)
                 self.assertEqual(node.low, ral_node.offset)

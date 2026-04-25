@@ -40,12 +40,16 @@ class AddressableRALNode(RALNode, ABC):
     """
     Abstract base class for all RAL nodes that can have an address.
     """
-    def __init__(self, parent: Optional["AddressableRALNode"], dbapi: "DBAPI", dbid: int, name: str, address: int) -> None:
+    def __init__(self, parent: Optional["AddressableRALNode"], dbapi: "DBAPI", dbid: int, name: str, address: int, size: int) -> None:
         super().__init__(parent, dbapi, dbid, name)
         self.parent: Optional["RALGroup"]
 
         #: Absolute address of this RAL node
         self.address = address
+
+        #: Node's size in bytes
+        self.size = size
+
         self._hwio: Optional["HWIO"] = self._dbapi.hwio_registry.attached_hwio.get(self.path)
 
     def __getattr__(self, name: str) -> Union["RALArray", "RALRegister", "RALGroup", "RALField"]:

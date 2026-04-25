@@ -80,6 +80,7 @@ class DBAPI:
             row["dbid"],
             row["name"],
             offset,
+            row["size"],
         )
 
     def get_ref_dbapi(self, ref_dbid: int) -> "DBAPI":
@@ -225,6 +226,7 @@ class DBAPI:
                 row["dbid"],
                 name,
                 parent.address + row["offset"] + array_offset,
+                row["size"],
             )
         elif type_id == self.TypeID.Field.value:
             assert isinstance(parent, RALRegister)
