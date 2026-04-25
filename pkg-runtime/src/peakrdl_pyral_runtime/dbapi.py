@@ -25,13 +25,14 @@ class DBAPI:
     Implements the mechanisms to query the RAL database and construct RAL nodes
     from the database definition.
 
-    Go away! This is a **private** API! RAL users shall not expect this to
-    remain stable between runtime versions!
+    Go away! This is a **private** API! RAL users shall not use this directly
+    as it may change between runtime versions!
     """
+
     # DBAPI version denotes the underlying database content's compatibility with
     # the runtime implementation. This value is incremented any time there is a
     # compatibility-breaking change in this interface.
-    DBAPI_VERSION = "1"
+    DBAPI_VERSION = "2"
 
     class TypeID(enum.Enum):
         Group = 1
@@ -213,8 +214,8 @@ class DBAPI:
                 row["dbid"],
                 name,
                 parent.address + row["offset"] + array_offset,
-                row["size"] // 8, # FIXME: move this division into the exporter
-                row["accesswidth"] // 8, # FIXME: move this division into the exporter
+                row["size"],
+                row["access_size"],
             )
         elif type_id == self.TypeID.Group.value:
             assert isinstance(parent, RALGroup)

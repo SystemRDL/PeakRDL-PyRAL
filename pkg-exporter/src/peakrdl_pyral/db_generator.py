@@ -12,8 +12,7 @@ from .name_filter import filter_group_item, filter_register_item
 # DBAPI version denotes the underlying database content's compatibility with
 # the runtime implementation. This value is incremented any time there is a
 # compatibility-breaking change in this interface.
-DBAPI_VERSION = "1"
-
+DBAPI_VERSION = "2"
 
 class TypeID(enum.Enum):
     Group = 1
@@ -53,11 +52,11 @@ class DBGenerator:
                 type_id INTEGER,        -- See dbapi.TypeID
                 name TEXT,              -- aka inst_name
 
-                offset INTEGER,         -- [all] address offset / bit-offset for field
-                dims TEXT,              -- [g,r] array dimensions. Comma-separated hex strings
-                stride INTEGER,         -- [g,r] array stride
-                size INTEGER,           -- [r,f] regwidth / fieldwidth
-                accesswidth INTEGER     -- [r]
+                offset INTEGER,         -- [all] address offset | bit-offset for field
+                dims TEXT,              -- [g|r] array dimensions. Comma-separated hex strings
+                stride INTEGER,         -- [g|r] array stride
+                size INTEGER,           -- [r|f] reg size | fieldwidth
+                access_size INTEGER     -- [r]
             )
         """)
 
@@ -113,7 +112,7 @@ class DBGenerator:
                 ?,    -- dims
                 ?,    -- stride
                 NULL, -- size
-                NULL  -- accesswidth
+                NULL  -- access_size
             ) RETURNING dbid
         """, (
             parent_dbid,
@@ -146,7 +145,7 @@ class DBGenerator:
                 ?,    -- dims
                 ?,    -- stride
                 NULL, -- size
-                NULL  -- accesswidth
+                NULL  -- access_size
             ) RETURNING dbid
         """, (
             parent_dbid,
@@ -194,7 +193,7 @@ class DBGenerator:
                 ?,    -- dims
                 ?,    -- stride
                 ?,    -- size
-                ?     -- accesswidth
+                ?     -- access_size
             ) RETURNING dbid
         """, (
             parent_dbid,
@@ -203,8 +202,8 @@ class DBGenerator:
             node.raw_address_offset,
             dims,
             stride,
-            node.get_property("regwidth"),
-            node.get_property("accesswidth"),
+            node.get_property("regwidth") // 8,
+            node.get_property("accesswidth") // 8,
         ))
         dbid = res.fetchone()[0]
         cur.close()
@@ -222,7 +221,7 @@ class DBGenerator:
                 NULL, -- dims
                 NULL, -- stride
                 ?,    -- size
-                NULL  -- accesswidth
+                NULL  -- access_size
             )
         """, (
             parent_dbid,
