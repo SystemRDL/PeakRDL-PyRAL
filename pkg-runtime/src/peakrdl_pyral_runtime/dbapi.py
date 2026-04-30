@@ -65,9 +65,12 @@ class DBAPI:
         """
         Get the root node of a RAL DB
         """
-        # Fetch row from DB. Root node always has a dbid of 1
+        # Fetch row from DB. Root node always has the lowest dbid
+        # Ordering and returning the first appears to be marginally faster than
+        # selecting where dbid==1.
+        # I suspect this is because this avoids a binary search of the primary keys
         cur = self.db.cursor()
-        cur.execute("SELECT * FROM ral WHERE dbid=1")
+        cur.execute("SELECT * FROM ral ORDER BY dbid LIMIT 1")
         row = cur.fetchone()
         if row is None:
             raise RuntimeError("Not found")
@@ -126,7 +129,7 @@ class DBAPI:
         # Fetch row from DB
         cur = self.db.cursor()
         cur.execute(
-            "SELECT * FROM ral WHERE parent_dbid=? AND name=?",
+            "SELECT * FROM ral WHERE parent_dbid=? AND name=? LIMIT 1",
             (
                 parent._dbid, child_name
             )
