@@ -54,16 +54,16 @@ class OpenOCDHWIO(HWIO):
         self._sock.sendall(data)
 
         # Get response
-        data = bytearray()
+        rdata = bytearray()
         while True:
             chunk = self._sock.recv(4096)
-            data.extend(chunk)
+            rdata.extend(chunk)
             if chunk.endswith(RPC_TERM):
                 break
 
         # strip trailing RPC_TERM token
-        data = data[:-1]
-        return data.decode("utf-8").strip()
+        rdata = rdata[:-1]
+        return rdata.decode("utf-8").strip()
 
     def _read_impl(self, addr: int, size: int) -> int:
         suffix = SUFFIX_MAP[size]

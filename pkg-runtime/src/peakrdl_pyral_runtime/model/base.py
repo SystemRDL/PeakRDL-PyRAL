@@ -58,14 +58,13 @@ class AddressableRALNode(RALNode, ABC):
             raise AttributeError(f"'{repr(self)}' has no attribute '{name}'")
         return child
 
-    def children(self) -> list[Union["RALArray", "RALRegister", "RALGroup", "RALField"]]:
+    def children(self) -> tuple[Union["RALArray", "RALRegister", "RALGroup", "RALField"], ...]:
         """
-        Returns a list of child RAL elements
+        Returns a tuple of child RAL elements
         """
         return self._dbapi.get_children(self)
 
     def _lookup_hwio(self) -> tuple["HWIO", int]:
-        # TODO: Implement HWIO object caching
         if self._hwio is not None:
             # This node has a HWIO bound to it
             if self.parent is None:

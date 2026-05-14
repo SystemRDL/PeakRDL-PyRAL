@@ -4,6 +4,7 @@ import sqlite3
 from collections import OrderedDict
 import importlib
 import weakref
+from functools import lru_cache
 
 from .model import RALRegister, RALField, RALGroup, RALArray, RegValue
 from .model import AddressableRALNode
@@ -60,7 +61,7 @@ class DBAPI:
         # Close the DB connection when this DBAPI gets garbage collected
         weakref.finalize(self, self.db.close)
 
-
+    @lru_cache()
     def get_root(self, offset: int = 0) -> RALGroup:
         """
         Get the root node of a RAL DB
@@ -122,6 +123,7 @@ class DBAPI:
 
         return new_dbapi
 
+    @lru_cache()
     def get_child(self, parent: AddressableRALNode, child_name: str) -> Union[None, RALArray, RALRegister, RALGroup, RALField]:
         """
         Get a single child of a node by name
@@ -141,7 +143,8 @@ class DBAPI:
 
         return self.build_child(parent, row)
 
-    def get_children(self, parent: AddressableRALNode) -> list[Union[RALArray, RALRegister, RALGroup, RALField]]:
+    @lru_cache()
+    def get_children(self, parent: AddressableRALNode) -> tuple[Union[RALArray, RALRegister, RALGroup, RALField], ...]:
         """
         Get all the children of a node
         """
@@ -152,9 +155,10 @@ class DBAPI:
         )
         rows = cur.fetchall()
         cur.close()
-        return [self.build_child(parent, row) for row in rows]
+        return tuple([self.build_child(parent, row) for row in rows])
 
-    def regvalue_from_int(self, parent_reg_dbid: int, reg_value: int) -> RegValue:
+    @lru_cache()
+    def get_regvalue_spec(self, parent_reg_dbid: int) -> dict[str, tuple[int, int]]:
         """
         Convert a raw integer value to a field-aware RegValue
         """
@@ -172,6 +176,13 @@ class DBAPI:
         for row in rows:
             spec[row["name"]] = (row["offset"], row["size"])
 
+        return spec
+
+    def regvalue_from_int(self, parent_reg_dbid: int, reg_value: int) -> RegValue:
+        """
+        Convert a raw integer value to a field-aware RegValue
+        """
+        spec = self.get_regvalue_spec(parent_reg_dbid)
         return RegValue(reg_value, spec)
 
     def build_child(self, parent: AddressableRALNode, row: sqlite3.Row) -> Union[RALArray, RALRegister, RALGroup, RALField]:
