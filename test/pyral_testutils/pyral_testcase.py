@@ -40,8 +40,18 @@ class PyRALTestcase(TestCase):
             shutil.rmtree(run_dir)
         pathlib.Path(run_dir).mkdir(parents=True, exist_ok=True)
 
-    def export(self, src_files: list[str], external_types: Optional[dict[str, str]] = None) -> AddrmapNode:
+    def export(self, src_files: list[str], external_types: Optional[dict[str, str]] = None, output_lib_name: Optional[str] = None) -> AddrmapNode:
         this_dir = self.get_testcase_dir()
+
+        if output_lib_name:
+            output_dir = os.path.join(self.get_run_dir(), output_lib_name)
+            pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+            with open(os.path.join(output_dir, "__init__.py"), "w") as f:
+                pass
+        else:
+            output_dir = self.get_run_dir()
+
         rdlc = RDLCompiler()
         for file in src_files:
             file = os.path.join(this_dir, file)
@@ -49,7 +59,7 @@ class PyRALTestcase(TestCase):
         root = rdlc.elaborate()
 
         e = PyRALExporter()
-        e.export(root.top, self.get_run_dir(), external_types)
+        e.export(root.top, output_dir, external_types)
 
         return root.top
 

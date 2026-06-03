@@ -100,12 +100,16 @@ class DBAPI:
         cur.close()
 
         import_path = row["import_path"]
+
+        # Get parent module name from origin
+        origin_module_parent = ".".join(self.origin_module_name.split(".")[:-1])
+
         try:
-            ref_module = importlib.import_module(import_path, self.origin_module_name)
+            ref_module = importlib.import_module(import_path, origin_module_parent)
         except ImportError as exc:
             raise ImportError(
                 f"Failed to import grafted PyRAL module '{import_path}' while resolving an "
-                f"external reference from RAL package '{self.origin_module_name}. "
+                f"external reference from RAL package '{self.origin_module_name}'. "
                 "Ensure the module is installed and importable, and that PeakRDL "
                 "--graft-type path provided is correct."
             ) from exc
