@@ -88,6 +88,8 @@ class MMapFileHWIO(_MMapHWIO):
         """
         if size is None:
             size = os.stat(path).st_size
+            if size == 0:
+                raise ValueError("File size is 0. This device likely does not implement fstat")
         super().__init__(path, offset, size)
 
 
