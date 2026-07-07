@@ -65,7 +65,7 @@ class MMapMemHWIO(_MMapHWIO):
         offset: int
             Additional address offset of the region to map
         size: int
-            Size of the region to map map.
+            Size of the region to map.
         """
         super().__init__("/dev/mem", offset, size)
 
@@ -95,7 +95,8 @@ class MMapFileHWIO(_MMapHWIO):
 
 
 class MMapUIOHWIO(_MMapHWIO):
-    def __init__(self, path: str, *, map: int = 0, offset: int = 0):
+    # pylint: disable=super-init-not-called
+    def __init__(self, path: str, *, map_idx: int = 0, offset: int = 0) -> None:
         """
         HWIO implementation that maps to a Linux UIO (Userspace I/O) device.
 
@@ -103,8 +104,8 @@ class MMapUIOHWIO(_MMapHWIO):
         ----------
         path: str
             Path to the uio device (eg ``/dev/uio3``)
-        map: int
-            Which UIO map to target
+        map_idx: int
+            Index of which memory map within the UIO to target
         offset: int
             Additional address offset to add to all HWIO transactions
         """
@@ -114,8 +115,8 @@ class MMapUIOHWIO(_MMapHWIO):
         uio_name = os.path.basename(path)
 
         # Query sysfs for the requested uio map size
-        sysfs_path = f"/sys/class/uio/{uio_name}/maps/map{map:d}"
-        with open(os.path.join(sysfs_path, "size"), "r") as f:
+        sysfs_path = f"/sys/class/uio/{uio_name}/maps/map{map_idx:d}"
+        with open(os.path.join(sysfs_path, "size"), "r", encoding="utf-8") as f:
             size = int(f.read(), 0)
 
         # Round the size up to the nearest page size
@@ -123,11 +124,11 @@ class MMapUIOHWIO(_MMapHWIO):
 
         # Let the HWIO base class handle the entire offset
         # Skip the parent class's __init__ since it is being totally overridden
-        HWIO.__init__(self, offset)
+        HWIO.__init__(self, offset) # pylint: disable=non-parent-init-called
 
         # mmap's offset parameter has a special meaning for UIO devices. It is
-        # used to select which mapping to use
-        uio_offset = map * mmap.PAGESIZE
+        # used to select which memory map to use
+        uio_offset = map_idx * mmap.PAGESIZE
 
         # Open the mmap
         self._f = os.open(path, os.O_RDWR | os.O_SYNC)
