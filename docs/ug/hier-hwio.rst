@@ -20,14 +20,14 @@ different hierarchical nodes.
 
 .. code-block:: python
 
-    from peakrdl_pyral_runtime.hwio.mmap import MMapFileHWIO
+    from peakrdl_pyral_runtime.hwio.mmap import MMapUIOHWIO
     from my_soc_ral import my_soc
 
     # Create each HWIO
-    uio0 = MMapFileHWIO("/dev/uio0")
-    uio1 = MMapFileHWIO("/dev/uio1")
-    uio2 = MMapFileHWIO("/dev/uio2")
-    uio3 = MMapFileHWIO("/dev/uio3")
+    uio0 = MMapUIOHWIO("/dev/uio0")
+    uio1 = MMapUIOHWIO("/dev/uio1")
+    uio2 = MMapUIOHWIO("/dev/uio2")
+    uio3 = MMapUIOHWIO("/dev/uio3")
 
     # Create the RAL
     ral = my_soc.get_ral()

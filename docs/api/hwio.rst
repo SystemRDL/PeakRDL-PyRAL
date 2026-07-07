@@ -28,7 +28,9 @@ The PyRAL runtime library provides several built-in HWIO classes that you can us
 
     *   - :class:`~peakrdl_pyral_runtime.hwio.mmap.MMapFileHWIO`
         - If you have a device file that maps to your peripheral
-          (like a `UIO Device <https://www.kernel.org/doc/html/latest/driver-api/uio-howto.html>`_)
+
+    *   - :class:`~peakrdl_pyral_runtime.hwio.mmap.MMapUIOHWIO`
+        - Map to a `Linux Userspace IO device (UIO) <https://www.kernel.org/doc/html/latest/driver-api/uio-howto.html>`_
 
     *   - :class:`~peakrdl_pyral_runtime.hwio.mmap.MMapMemHWIO`
         - If you want to manually map to a sub-region of ``/dev/mem`` using a

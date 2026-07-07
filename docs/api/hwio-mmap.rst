@@ -22,3 +22,10 @@ MMapMemHWIO
 
 .. autoclass:: peakrdl_pyral_runtime.hwio.mmap.MMapMemHWIO
     :members:
+
+
+MMapUIOHWIO
+-----------
+
+.. autoclass:: peakrdl_pyral_runtime.hwio.mmap.MMapUIOHWIO
+    :members:
