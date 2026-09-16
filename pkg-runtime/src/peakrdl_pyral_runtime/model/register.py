@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import Iterator, AsyncIterator
+from contextlib import contextmanager, asynccontextmanager
 
 from .base import AddressableRALNode
 from .regvalue import RegValue
@@ -93,7 +93,6 @@ class RALRegister(AddressableRALNode):
                 r.field_1 = 123
                 # r.field_2 = 0 (implied)
                 r.field_3 = 456
-
         """
         rv = self._dbapi.regvalue_from_int(self._dbid, 0)
         yield rv
@@ -119,3 +118,66 @@ class RALRegister(AddressableRALNode):
         rv = self._dbapi.regvalue_from_int(self._dbid, value)
         yield rv
         self.write(int(rv))
+
+    #---------------------------------------------------------------------------
+    async def aread(self) -> int:
+        """
+        Async equivalent of :meth:`read`
+        """
+        hwio, hwio_addr_offset = self._lookup_hwio()
+        addr = self.address - hwio_addr_offset
+
+        if self.size == self.access_size:
+            return await hwio.aread(addr, self.access_size)
+        else:
+            # Is wide register. Read low-to-high address
+            n_subwords = self.size // self.access_size
+            result = 0
+            for i in range(n_subwords):
+                subword = await hwio.aread(addr + i * self.access_size, self.access_size)
+                result |= subword << (i * self.access_size * 8)
+            return result
+
+    async def awrite(self, value: int) -> None:
+        """
+        Async equivalent of :meth:`write`
+        """
+        hwio, hwio_addr_offset = self._lookup_hwio()
+        addr = self.address - hwio_addr_offset
+
+        if self.size == self.access_size:
+            await hwio.awrite(addr, value, self.access_size)
+        else:
+            # Accessing a wide register. Issue multiple accesses
+            n_subwords = self.size // self.access_size
+            accesswidth = self.access_size * 8
+            mask = (1 << accesswidth) - 1
+            for i in range(n_subwords):
+                await hwio.awrite(addr + i * self.access_size, value & mask, self.access_size)
+                value >>= accesswidth
+
+    async def aread_fields(self) -> RegValue:
+        """
+        Async equivalent of :meth:`read_fields`
+        """
+        value = await self.aread()
+        return self._dbapi.regvalue_from_int(self._dbid, value)
+
+    @asynccontextmanager
+    async def awrite_fields(self) -> AsyncIterator[RegValue]:
+        """
+        Async equivalent of :meth:`write_fields`
+        """
+        rv = self._dbapi.regvalue_from_int(self._dbid, 0)
+        yield rv
+        await self.awrite(int(rv))
+
+    @asynccontextmanager
+    async def achange_fields(self) -> AsyncIterator[RegValue]:
+        """
+        Async equivalent of :meth:`change_fields`
+        """
+        value = await self.aread()
+        rv = self._dbapi.regvalue_from_int(self._dbid, value)
+        yield rv
+        await self.awrite(int(rv))

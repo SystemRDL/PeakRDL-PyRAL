@@ -142,7 +142,65 @@ class HWIO(ABC):
         self._write_bytes_impl(addr, data)
 
     #---------------------------------------------------------------------------
+    async def aread_list(self, offset: int, n_words: int, size: int = 4) -> list[int]:
+        """
+        Async equivalent of :meth:`read_list()`
+        """
+        addr = self._offset + offset
+        if addr % size != 0:
+            raise ValueError(f"Access at address 0x{addr:x} is not {size}-byte aligned")
 
+        words = []
+        for _ in range(n_words):
+            words.append(await self._aread_impl(addr, size))
+            addr += size
+        return words
+
+    async def awrite_list(self, offset: int, data: list[int], size: int = 4) -> None:
+        """
+        Async equivalent of :meth:`write_list()`
+        """
+        addr = self._offset + offset
+        if addr % size != 0:
+            raise ValueError(f"Access at address 0x{addr:x} is not {size}-byte aligned")
+
+        for word in data:
+            await self._awrite_impl(addr, word, size)
+            addr += size
+
+    async def aread(self, offset: int, size: int = 4) -> int:
+        """
+        Async equivalent of :meth:`read()`
+        """
+        addr = self._offset + offset
+        if addr % size != 0:
+            raise ValueError(f"Access at address 0x{addr:x} is not {size}-byte aligned")
+        return await self._aread_impl(addr, size)
+
+    async def awrite(self, offset: int, value: int, size: int = 4) -> None:
+        """
+        Async equivalent of :meth:`write()`
+        """
+        addr = self._offset + offset
+        if addr % size != 0:
+            raise ValueError(f"Access at address 0x{addr:x} is not {size}-byte aligned")
+
+        await self._awrite_impl(addr, value, size)
+
+    async def aread_bytes(self, offset: int, size: int) -> bytearray:
+        """
+        Async equivalent of :meth:`read_bytes()`
+        """
+        addr = self._offset + offset
+        return await self._aread_bytes_impl(addr, size)
+
+    async def awrite_bytes(self, offset: int, data: Union[bytes, bytearray]) -> None:
+        """
+        Async equivalent of :meth:`write_bytes()`
+        """
+        addr = self._offset + offset
+        await self._awrite_bytes_impl(addr, data)
+    #---------------------------------------------------------------------------
     @abstractmethod
     def _read_impl(self, addr: int, size: int) -> int:
         """
@@ -227,4 +285,41 @@ class HWIO(ABC):
         """
         for b in data:
             self._write_impl(addr, b, 1)
+            addr += 1
+
+    #---------------------------------------------------------------------------
+    async def _aread_impl(self, addr: int, size: int) -> int:
+        """
+        Async equivalent of :meth:`_read_impl`.
+
+        If a HWIO implementation does not define this, falls back to the sync
+        variant.
+        """
+        return self._read_impl(addr, size)
+
+    async def _awrite_impl(self, addr: int, value: int, size: int) -> None:
+        """
+        Async equivalent of :meth:`_write_impl`.
+
+        If a HWIO implementation does not define this, falls back to the sync
+        variant.
+        """
+        self._write_impl(addr, value, size)
+
+    async def _aread_bytes_impl(self, addr: int, size: int) -> bytearray:
+        """
+        Async equivalent of :meth:`_read_bytes_impl`
+        """
+        data = bytearray()
+        for _ in range(size):
+            data.append(await self._aread_impl(addr, 1))
+            addr += 1
+        return data
+
+    async def _awrite_bytes_impl(self, addr: int, data: Union[bytes, bytearray]) -> None:
+        """
+        Async equivalent of :meth:`_write_bytes_impl`
+        """
+        for b in data:
+            await self._awrite_impl(addr, b, 1)
             addr += 1

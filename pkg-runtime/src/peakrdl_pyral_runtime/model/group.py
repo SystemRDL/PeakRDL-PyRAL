@@ -129,3 +129,52 @@ class RALGroup(AddressableRALNode):
         hwio, hwio_addr_offset = self._lookup_hwio()
         addr = self.address - hwio_addr_offset + offset
         hwio.write_bytes(addr, data)
+
+    #---------------------------------------------------------------------------
+    async def aread(self, offset: int, size: int = 4) -> int:
+        """
+        Async equivalent of :meth:`read`
+        """
+        hwio, hwio_addr_offset = self._lookup_hwio()
+        addr = self.address - hwio_addr_offset + offset
+        return await hwio.aread(addr, size)
+
+    async def aread_list(self, offset: int, n_words: int, size: int = 4) -> list[int]:
+        """
+        Async equivalent of :meth:`read_list`
+        """
+        hwio, hwio_addr_offset = self._lookup_hwio()
+        addr = self.address - hwio_addr_offset + offset
+        return await hwio.aread_list(addr, n_words, size)
+
+    async def aread_bytes(self, offset: int, size: int) -> bytearray:
+        """
+        Async equivalent of :meth:`read_bytes`
+        """
+        hwio, hwio_addr_offset = self._lookup_hwio()
+        addr = self.address - hwio_addr_offset + offset
+        return await hwio.aread_bytes(addr, size)
+
+    async def awrite(self, offset: int, value: int, size: int = 4) -> None:
+        """
+        Async equivalent of :meth:`write`
+        """
+        hwio, hwio_addr_offset = self._lookup_hwio()
+        addr = self.address - hwio_addr_offset + offset
+        await hwio.awrite(addr, value, size)
+
+    async def awrite_list(self, offset: int, data: list[int], size: int = 4) -> None:
+        """
+        Async equivalent of :meth:`write_list`
+        """
+        hwio, hwio_addr_offset = self._lookup_hwio()
+        addr = self.address - hwio_addr_offset + offset
+        await hwio.awrite_list(addr, data, size)
+
+    async def awrite_bytes(self, offset: int, data: Union[bytes, bytearray]) -> None:
+        """
+        Async equivalent of :meth:`write_bytes`
+        """
+        hwio, hwio_addr_offset = self._lookup_hwio()
+        addr = self.address - hwio_addr_offset + offset
+        await hwio.awrite_bytes(addr, data)

@@ -24,3 +24,19 @@ class MockHWIO(DemoHWIO):
             ("W", addr, size, data)
         )
         super()._write_impl(addr, data, size)
+
+    async def _aread_impl(self, addr: int, size: int) -> int:
+        self._xfer_log.append(
+            ("aR", addr, size, None)
+        )
+        # DemoHWIO does not implement async methods.
+        # Call sync version instead to avoid double-logging transactions
+        return super()._read_impl(addr, size)
+
+    async def _awrite_impl(self, addr: int, data: int, size: int) -> None:
+        self._xfer_log.append(
+            ("aW", addr, size, data)
+        )
+        # DemoHWIO does not implement async methods.
+        # Call sync version instead to avoid double-logging transactions
+        super()._write_impl(addr, data, size)

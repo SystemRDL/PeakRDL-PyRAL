@@ -98,29 +98,33 @@ class MirroredHWIOWrapper(HWIO):
         yield
         self._write_to_hwio = prev_state
 
+    def _mirror_read(self, addr: int, size: int) -> int:
+        value = 0
+        for i in range(size):
+            value |= (self._mirror_mem[addr + i] << (8 * i))
+        return value
+
+    def _mirror_write(self, addr: int, value: int, size: int) -> None:
+        for i in range(size):
+            self._mirror_mem[addr + i] = value & 0xFF
+            value >>= 8
+
+    #---------------------------------------------------------------------------
     def _read_impl(self, addr: int, size: int) -> int:
         if self._read_from_mirror:
             # Do not read from the actual hardware. Pull value from the mirror
-            value = 0
-            for i in range(size):
-                value |= (self._mirror_mem[addr + i] << (8 * i))
+            value = self._mirror_read(addr, size)
         else:
             # Pass-through to the actual HWIO
             value = self.hwio._read_impl(addr, size)
 
             # Update mirrored state
-            v = value
-            for i in range(size):
-                self._mirror_mem[addr + i] = v & 0xFF
-                v >>= 8
+            self._mirror_write(addr, value, size)
         return value
 
     def _write_impl(self, addr: int, value: int, size: int) -> None:
         # Always update the mirror when writing
-        v = value
-        for i in range(size):
-            self._mirror_mem[addr + i] = v & 0xFF
-            v >>= 8
+        self._mirror_write(addr, value, size)
 
         if self._write_to_hwio:
             self.hwio._write_impl(addr, value, size)
@@ -147,3 +151,46 @@ class MirroredHWIOWrapper(HWIO):
 
         if self._write_to_hwio:
             self.hwio._write_bytes_impl(addr, data)
+
+    #---------------------------------------------------------------------------
+    async def _aread_impl(self, addr: int, size: int) -> int:
+        if self._read_from_mirror:
+            # Do not read from the actual hardware. Pull value from the mirror
+            value = self._mirror_read(addr, size)
+        else:
+            # Pass-through to the actual HWIO
+            value = await self.hwio._aread_impl(addr, size)
+
+            # Update mirrored state
+            self._mirror_write(addr, value, size)
+        return value
+
+    async def _awrite_impl(self, addr: int, value: int, size: int) -> None:
+        # Always update the mirror when writing
+        self._mirror_write(addr, value, size)
+
+        if self._write_to_hwio:
+            await self.hwio._awrite_impl(addr, value, size)
+
+    async def _aread_bytes_impl(self, addr: int, size: int) -> bytearray:
+        # Explicitly intercept this in case the HWIO layer overrides this
+        if self._read_from_mirror:
+            data = bytearray()
+            for _ in range(size):
+                data.append(self._mirror_mem[addr])
+                addr += 1
+        else:
+            data = await self.hwio._aread_bytes_impl(addr, size)
+
+            # Update mirrored state
+            for i, b in enumerate(data):
+                self._mirror_mem[addr + i] = b
+        return data
+
+    async def _awrite_bytes_impl(self, addr: int, data: Union[bytes, bytearray]) -> None:
+        # Explicitly intercept this in case the HWIO layer overrides this
+        for i, b in enumerate(data):
+            self._mirror_mem[addr + i] = b
+
+        if self._write_to_hwio:
+            await self.hwio._awrite_bytes_impl(addr, data)

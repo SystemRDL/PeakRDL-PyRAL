@@ -11,6 +11,8 @@ COMMON_RESERVED_WORDS = {
     "children",
     "read",
     "write",
+    "aread",
+    "awrite",
     "detach_hwio",
     "attach_hwio",
     "_abc_impl",
@@ -21,6 +23,10 @@ GROUP_RESERVED_WORDS = COMMON_RESERVED_WORDS | {
     "read_bytes",
     "write_list",
     "write_bytes",
+    "aread_list",
+    "aread_bytes",
+    "awrite_list",
+    "awrite_bytes",
 }
 
 REGISTER_RESERVED_WORDS = COMMON_RESERVED_WORDS | {
@@ -28,6 +34,9 @@ REGISTER_RESERVED_WORDS = COMMON_RESERVED_WORDS | {
     "read_fields",
     "write_fields",
     "change_fields",
+    "aread_fields",
+    "awrite_fields",
+    "achange_fields",
 }
 
 def filter_group_item(s: str) -> str:

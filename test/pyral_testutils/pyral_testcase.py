@@ -1,4 +1,4 @@
-from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase
 from typing import Optional
 import inspect
 import os
@@ -13,7 +13,7 @@ from peakrdl_pyral_runtime import model as pyral
 from systemrdl.compiler import RDLCompiler
 from systemrdl.node import AddrmapNode, AddressableNode, FieldNode, SignalNode
 
-class PyRALTestcase(TestCase):
+class PyRALTestcase(IsolatedAsyncioTestCase):
 
     #: this gets auto-loaded via the _load_request autouse fixture
     request: pytest.FixtureRequest

@@ -50,3 +50,19 @@ class RALField(RALNode):
         mask = ((1 << self.width) - 1) << self.offset
         reg_value = (reg_value & ~mask) | ((value << self.offset) & mask)
         self.parent.write(reg_value)
+
+    async def aread(self) -> int:
+        """
+        Async equivalent of :meth:`read`
+        """
+        reg_value = await self.parent.aread()
+        return (reg_value >> self.offset) & ((1 << self.width) - 1)
+
+    async def achange(self, value: int) -> None:
+        """
+        Async equivalent of :meth:`change`
+        """
+        reg_value = await self.parent.aread()
+        mask = ((1 << self.width) - 1) << self.offset
+        reg_value = (reg_value & ~mask) | ((value << self.offset) & mask)
+        await self.parent.awrite(reg_value)

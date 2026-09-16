@@ -25,6 +25,14 @@ is recommended to override the :meth:`~peakrdl_pyral_runtime.hwio.HWIO._read_byt
 
 .. automethod:: peakrdl_pyral_runtime.hwio.HWIO._write_bytes_impl
 
+.. automethod:: peakrdl_pyral_runtime.hwio.HWIO._aread_impl
+
+.. automethod:: peakrdl_pyral_runtime.hwio.HWIO._awrite_impl
+
+.. automethod:: peakrdl_pyral_runtime.hwio.HWIO._aread_bytes_impl
+
+.. automethod:: peakrdl_pyral_runtime.hwio.HWIO._awrite_bytes_impl
+
 
 HWIO
 ----
