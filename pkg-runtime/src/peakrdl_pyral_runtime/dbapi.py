@@ -43,7 +43,11 @@ class DBAPI:
 
     def __init__(self, path: str, origin_module_name: str) -> None:
         self.origin_module_name = origin_module_name
-        self.db = sqlite3.connect(path)
+        self.db = sqlite3.connect(
+            f"file:{path}?mode=ro",
+            uri=True,
+            check_same_thread=False,
+        )
         self.db.row_factory = sqlite3.Row
 
         self.hwio_registry = HWIORegistry()
