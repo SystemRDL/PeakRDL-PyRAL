@@ -6,7 +6,6 @@ import enum
 from systemrdl.node import AddrmapNode, MemNode, RegfileNode
 from systemrdl.node import RegNode, FieldNode
 
-from . import __about__
 from .name_filter import filter_group_item, filter_register_item
 
 # DBAPI version denotes the underlying database content's compatibility with
@@ -41,7 +40,6 @@ class DBGenerator:
                 value TEXT
             )
         """)
-        cur.execute("INSERT INTO dbinfo VALUES (?, ?)", ("version", __about__.__version__))
         cur.execute("INSERT INTO dbinfo VALUES (?, ?)", ("dbapi-version", DBAPI_VERSION))
 
         # Create main RAL database table
