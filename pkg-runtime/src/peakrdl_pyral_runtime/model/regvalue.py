@@ -1,8 +1,20 @@
-from typing import Any
+from typing import Any, Optional
 from collections.abc import Iterable, Iterator
+from enum import IntEnum
+
+# Maps a field's raw value to its enum member
+DecodeMap = dict[int, IntEnum]
 
 # Far more performant to store the spec as a tuple rather than a higher order object
-SpecEntry = tuple[int, int] # (offset, width)
+SpecEntry = tuple[int, int, Optional[DecodeMap]] # (offset, width, decode_map)
+
+def make_decode_map(enum_cls: Optional[type[IntEnum]]) -> Optional[DecodeMap]:
+    """
+    Build the value->member lookup of an enum, or None if there is no enum.
+    """
+    if enum_cls is None:
+        return None
+    return {member.value: member for member in enum_cls}
 
 class RegValue(Iterable):
     """
@@ -27,6 +39,15 @@ class RegValue(Iterable):
     .. code-block:: python
 
         rv_value = int(rv)
+
+    Fields that use an enumerated encoding (``encode`` property) are returned
+    as members of the field's :class:`~enum.IntEnum`. Values that do not
+    correspond to any member are returned as a plain :class:`int`.
+    Enum members can be assigned directly, since they are integers:
+
+    .. code-block:: python
+
+        rv.mode = my_reg.mode.enum.FAST
     """
     def __init__(self, value: int, spec: dict[str, SpecEntry]):
         self._value = value
@@ -39,8 +60,11 @@ class RegValue(Iterable):
         if name not in self._spec:
             raise AttributeError(f"'{self.__class__.__name__}' object has no field '{name}'")
 
-        offset, width = self._spec[name]
-        return (self._value >> offset) & ((1 << width) - 1)
+        offset, width, decode_map = self._spec[name]
+        value = (self._value >> offset) & ((1 << width) - 1)
+        if decode_map is not None:
+            return decode_map.get(value, value)
+        return value
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name in {"_value", "_spec"}:
@@ -51,7 +75,7 @@ class RegValue(Iterable):
             raise AttributeError(f"'{self.__class__.__name__}' object has no field '{name}'")
 
         assert isinstance(value, int)
-        offset, width = self._spec[name]
+        offset, width, _ = self._spec[name]
         mask = ((1 << width) - 1) << offset
         value <<= offset
         masked_value = value & mask

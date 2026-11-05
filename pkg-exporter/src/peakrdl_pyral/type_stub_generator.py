@@ -1,8 +1,11 @@
-from typing import Union
+from typing import Union, Optional
 from collections import OrderedDict
 
 from systemrdl.node import AddrmapNode, MemNode, RegfileNode
-from systemrdl.node import RegNode, AddressableNode
+from systemrdl.node import RegNode, AddressableNode, FieldNode
+from systemrdl.rdltypes import UserEnum
+
+from .name_filter import filter_enum_member
 
 class RootDefinition:
     """
@@ -48,6 +51,10 @@ class TypeStubGenerator:
         # {rdl_type_name, RootDefinition}
         self._root_defs: dict[str, RootDefinition] = OrderedDict()
 
+        # Enum types used by field encodings, emitted at module level
+        # {enum_cls: stub_class_name}
+        self._enums: dict[type[UserEnum], str] = OrderedDict()
+
     def node_is_external(self, node: AddressableNode) -> bool:
         return self.node_is_in_root_ns(node) and (node.type_name in self.graft_types)
 
@@ -66,6 +73,7 @@ class TypeStubGenerator:
                 "#  https://github.com/SystemRDL/PeakRDL-PyRAL\n",
                 "from collections.abc import Iterator\n",
                 "from contextlib import contextmanager\n",
+                "from enum import IntEnum\n",
                 "from peakrdl_pyral_runtime.model import RALGroup, RALRegister, RALField, RegValue\n",
             ])
 
@@ -75,6 +83,12 @@ class TypeStubGenerator:
                 external_deps.update(root_def.external_dependencies)
             for type_name, import_path in external_deps.items():
                 f.write(f"from {import_path}_stubs import {type_name}\n")
+
+            # Enum definitions
+            for enum_cls, enum_type_name in self._enums.items():
+                f.write(f"class {enum_type_name}(IntEnum):\n")
+                for member in enum_cls.members.values():
+                    f.write(f"    {filter_enum_member(member.name)} = {member.value}\n")
 
             # Flatten all root defs
             for root_def in reversed(self._root_defs.values()):
@@ -129,7 +143,7 @@ class TypeStubGenerator:
                     child_rootdef = self._root_defs[child.type_name]
 
                 if isinstance(child, RegNode):
-                    child_type_name = f"{child.type_name}_Register"
+                    child_type_name = f"{child.type_name}_Reg"
                 else:
                     child_type_name = f"{child.type_name}_Group"
                 current_rootdef.dependencies[child_type_name] = child_rootdef
@@ -186,7 +200,19 @@ class TypeStubGenerator:
 
         # Child field instances
         for child in node.fields():
-            current_rootdef.add_line(f"{child.inst_name}: RALField")
+            enum_type_name = self.get_enum_type_name(child)
+            if enum_type_name is None:
+                current_rootdef.add_line(f"{child.inst_name}: RALField")
+            else:
+                # Specialized field class that returns the enum
+                field_type_name = f"{child.inst_name}_Field"
+                current_rootdef.add_line(f"class {field_type_name}(RALField):")
+                current_rootdef.push_indent()
+                current_rootdef.add_line(f"enum: type[{enum_type_name}]")
+                current_rootdef.add_line(f"def read(self) -> {enum_type_name} | int: ...")
+                current_rootdef.add_line(f"async def aread(self) -> {enum_type_name} | int: ...")
+                current_rootdef.pop_indent()
+                current_rootdef.add_line(f"{child.inst_name}: {field_type_name}")
 
         current_rootdef.pop_indent()
         return type_name
@@ -195,5 +221,41 @@ class TypeStubGenerator:
         current_rootdef.add_line(f"class {base_type_name}_RV(RegValue):")
         current_rootdef.push_indent()
         for child in node.fields():
-            current_rootdef.add_line(f"{child.inst_name}: int")
+            enum_type_name = self.get_enum_type_name(child)
+            if enum_type_name is None:
+                current_rootdef.add_line(f"{child.inst_name}: int")
+            else:
+                current_rootdef.add_line(f"{child.inst_name}: {enum_type_name} | int")
         current_rootdef.pop_indent()
+
+    def get_enum_type_name(self, node: FieldNode) -> Optional[str]:
+        """
+        Returns the stub class name of the enum that encodes this field, or None
+        if the field is not encoded.
+        The enum is registered for emission on first use.
+        """
+        enum_cls = node.get_property("encode")
+        if enum_cls is None:
+            return None
+        if enum_cls in self._enums:
+            return self._enums[enum_cls]
+
+        # Qualify the name with its declaration scope since different scopes
+        # can declare enums of the same name
+        scope_path = enum_cls.get_scope_path("__")
+        if scope_path:
+            base_name = f"{scope_path}__{enum_cls.type_name}_Enum"
+        else:
+            base_name = f"{enum_cls.type_name}_Enum"
+
+        # Guarantee uniqueness, in case distinct enum types still end up with
+        # the same qualified name
+        enum_type_name = base_name
+        existing_names = set(self._enums.values())
+        i = 1
+        while enum_type_name in existing_names:
+            enum_type_name = f"{base_name}{i}"
+            i += 1
+
+        self._enums[enum_cls] = enum_type_name
+        return enum_type_name

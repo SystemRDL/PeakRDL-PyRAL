@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional, cast
 import enum
 import sqlite3
 from collections import OrderedDict
@@ -8,6 +8,7 @@ from functools import lru_cache
 
 from .model import RALRegister, RALField, RALGroup, RALArray, RegValue
 from .model import AddressableRALNode
+from .model.regvalue import SpecEntry, make_decode_map
 from .hwio import HWIO
 
 class HWIORegistry:
@@ -60,6 +61,11 @@ class DBAPI:
             raise ValueError("Invalid RAL DB")
         if version[0] != self.DBAPI_VERSION:
             raise ValueError(f"RAL/Runtime version mismatch. RAL dbapi version = {version[0]}; runtime dbapi version = {self.DBAPI_VERSION}")
+
+        # Enum tables were added without a DBAPI version change.
+        # DBs generated before then do not have them.
+        cur.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='field_enums'")
+        self._has_enums = cur.fetchone() is not None
         cur.close()
 
         # Close the DB connection when this DBAPI gets garbage collected
@@ -166,14 +172,52 @@ class DBAPI:
         return tuple([self.build_child(parent, row) for row in rows])
 
     @lru_cache()
-    def get_regvalue_spec(self, parent_reg_dbid: int) -> dict[str, tuple[int, int]]:
+    def get_enum(self, enum_id: int) -> type[enum.IntEnum]:
+        """
+        Build the IntEnum class of an enum definition
+        """
+        cur = self.db.cursor()
+        cur.execute("SELECT name FROM enums WHERE enum_id=?", (enum_id,))
+        row = cur.fetchone()
+        if row is None:
+            raise RuntimeError("Not found")
+        name = row["name"]
+
+        cur.execute(
+            "SELECT name, value FROM enum_members WHERE enum_id=? ORDER BY rowid ASC",
+            (enum_id,),
+        )
+        members = [(member_row["name"], member_row["value"]) for member_row in cur.fetchall()]
+        cur.close()
+
+        # mypy does not understand the functional API with a dynamic name
+        return cast("type[enum.IntEnum]", enum.IntEnum(name, members))
+
+    @lru_cache()
+    def get_field_enum(self, field_dbid: int) -> Optional[type[enum.IntEnum]]:
+        """
+        Get the IntEnum class that encodes a field, if any
+        """
+        if not self._has_enums:
+            return None
+
+        cur = self.db.cursor()
+        cur.execute("SELECT enum_id FROM field_enums WHERE field_dbid=?", (field_dbid,))
+        row = cur.fetchone()
+        cur.close()
+        if row is None:
+            return None
+        return self.get_enum(row["enum_id"])
+
+    @lru_cache()
+    def get_regvalue_spec(self, parent_reg_dbid: int) -> dict[str, SpecEntry]:
         """
         Convert a raw integer value to a field-aware RegValue
         """
         # Get all the fields of the register
         cur = self.db.cursor()
         cur.execute(
-            "SELECT name, offset, size FROM ral WHERE parent_dbid=? ORDER BY offset ASC",
+            "SELECT dbid, name, offset, size FROM ral WHERE parent_dbid=? ORDER BY offset ASC",
             (parent_reg_dbid,),
         )
         rows = cur.fetchall()
@@ -182,7 +226,8 @@ class DBAPI:
         # Build the field spec
         spec = OrderedDict()
         for row in rows:
-            spec[row["name"]] = (row["offset"], row["size"])
+            decode_map = make_decode_map(self.get_field_enum(row["dbid"]))
+            spec[row["name"]] = (row["offset"], row["size"], decode_map)
 
         return spec
 
@@ -259,6 +304,7 @@ class DBAPI:
                 name,
                 row["offset"],
                 row["size"],
+                self.get_field_enum(row["dbid"]),
             )
         else:
             raise RuntimeError(f"Unexpected type_id {type_id}")
