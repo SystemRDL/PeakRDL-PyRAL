@@ -1,6 +1,8 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+from enum import IntEnum
 
 from .base import RALNode
+from .regvalue import make_decode_map
 
 if TYPE_CHECKING:
     from ..dbapi import DBAPI
@@ -10,7 +12,7 @@ class RALField(RALNode):
     """
     Represents a single field in a register.
     """
-    def __init__(self, parent: "RALRegister", dbapi: "DBAPI", dbid: int, name: str, offset: int, width: int) -> None:
+    def __init__(self, parent: "RALRegister", dbapi: "DBAPI", dbid: int, name: str, offset: int, width: int, enum: Optional[type[IntEnum]] = None) -> None:
         super().__init__(parent, dbapi, dbid, name)
         self.parent: "RALRegister"
 
@@ -20,9 +22,23 @@ class RALField(RALNode):
         #: Bit-width of this field
         self.width = width
 
+        #: :class:`~enum.IntEnum` of the field's enumerated encoding
+        #: (``encode`` property), or ``None`` if the field is not encoded.
+        self.enum = enum
+        self._decode_map = make_decode_map(enum)
+
+    def _decode(self, value: int) -> int:
+        if self._decode_map is not None:
+            return self._decode_map.get(value, value)
+        return value
+
     def read(self) -> int:
         """
         Read the value of this field.
+
+        If the field has an enumerated encoding, the value is returned as a
+        member of :attr:`enum`, or as a plain :class:`int` if it does not
+        correspond to any member.
 
         This will implicitly perform a read of the parent register before returning the field's value.
 
@@ -30,7 +46,7 @@ class RALField(RALNode):
         efficient to use :meth:`RALRegister.read_fields()`
         """
         reg_value = self.parent.read()
-        return (reg_value >> self.offset) & ((1 << self.width) - 1)
+        return self._decode((reg_value >> self.offset) & ((1 << self.width) - 1))
 
     def change(self, value: int) -> None:
         """
@@ -56,7 +72,7 @@ class RALField(RALNode):
         Async equivalent of :meth:`read`
         """
         reg_value = await self.parent.aread()
-        return (reg_value >> self.offset) & ((1 << self.width) - 1)
+        return self._decode((reg_value >> self.offset) & ((1 << self.width) - 1))
 
     async def achange(self, value: int) -> None:
         """

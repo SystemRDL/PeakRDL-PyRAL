@@ -1,0 +1,46 @@
+enum mode_e {
+    OFF = 0;
+    SLOW = 1;
+    FAST = 2;
+    // Value 3 is intentionally not encoded
+};
+
+enum kw_e {
+    None = 0;
+    pass = 1;
+    _x_ = 2;
+    mro = 3;
+};
+
+reg ctrl_t {
+    enum state_e {
+        IDLE = 0;
+        BUSY = 1;
+    };
+    field {encode = state_e;} state[0:0];
+};
+
+reg status_t {
+    // Same name as ctrl_t::state_e, but a different type
+    enum state_e {
+        READY = 0;
+        ERROR = 1;
+        DONE = 2;
+    };
+    field {encode = state_e; sw = r; hw = w;} state[1:0];
+};
+
+addrmap enum_test {
+    reg {
+        field {encode = mode_e;} mode[1:0];
+        field {} plain[15:8];
+    } r0;
+
+    reg {
+        field {encode = mode_e;} mode2[5:4];
+        field {encode = kw_e;} kw[9:8];
+    } r1;
+
+    ctrl_t ctrl;
+    status_t status;
+};

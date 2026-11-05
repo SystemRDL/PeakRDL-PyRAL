@@ -5,8 +5,9 @@ import enum
 
 from systemrdl.node import AddrmapNode, MemNode, RegfileNode
 from systemrdl.node import RegNode, FieldNode
+from systemrdl.rdltypes import UserEnum
 
-from .name_filter import filter_group_item, filter_register_item
+from .name_filter import filter_group_item, filter_register_item, filter_enum_member
 
 # DBAPI version denotes the underlying database content's compatibility with
 # the runtime implementation. This value is incremented any time there is a
@@ -24,6 +25,10 @@ class DBGenerator:
     def __init__(self, db_path: str, graft_types: dict[str, str]) -> None:
         self._init_db(db_path)
         self.graft_types = graft_types
+
+        # Enum types already written to the DB
+        # {enum_cls: enum_id}
+        self._enum_ids: dict[type[UserEnum], int] = {}
 
     def _init_db(self, db_path: str) -> None:
         # Create new sqlite DB
@@ -62,6 +67,33 @@ class DBGenerator:
             CREATE TABLE external_refs(
                 dbid INTEGER PRIMARY KEY,
                 import_path TEXT
+            )
+        """)
+
+        # Enumerations used by field encodings
+        # These tables were added after DBAPI v2 was defined. Runtimes check
+        # for their presence so that older DBs without them remain compatible.
+        cur.execute("""
+            CREATE TABLE enums(
+                enum_id INTEGER PRIMARY KEY,
+                name TEXT               -- enum type name
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE enum_members(
+                enum_id INTEGER,
+                name TEXT,
+                value INTEGER
+            )
+        """)
+        cur.execute("""
+            CREATE INDEX idx_enum_members_enum_id
+            ON enum_members (enum_id)
+        """)
+        cur.execute("""
+            CREATE TABLE field_enums(
+                field_dbid INTEGER PRIMARY KEY,
+                enum_id INTEGER
             )
         """)
 
@@ -211,7 +243,7 @@ class DBGenerator:
 
     def add_field(self, node: FieldNode, parent_dbid: int) -> None:
         cur = self.db.cursor()
-        cur.execute("""
+        res = cur.execute("""
             INSERT INTO ral VALUES (
                 NULL, -- dbid
                 ?,    -- parent_dbid
@@ -222,7 +254,7 @@ class DBGenerator:
                 NULL, -- stride
                 ?,    -- size
                 NULL  -- access_size
-            )
+            ) RETURNING dbid
         """, (
             parent_dbid,
             TypeID.Field.value,
@@ -230,7 +262,42 @@ class DBGenerator:
             node.low,
             node.width,
         ))
+        dbid = res.fetchone()[0]
+
+        encode = node.get_property("encode")
+        if encode is not None:
+            enum_id = self.get_or_add_enum(encode)
+            cur.execute(
+                "INSERT INTO field_enums VALUES (?, ?)",
+                (dbid, enum_id),
+            )
         cur.close()
+
+    def get_or_add_enum(self, enum_cls: type[UserEnum]) -> int:
+        """
+        Returns the enum_id of an enum type, adding it to the DB if it has not
+        been seen yet.
+        """
+        if enum_cls in self._enum_ids:
+            return self._enum_ids[enum_cls]
+
+        cur = self.db.cursor()
+        res = cur.execute(
+            "INSERT INTO enums VALUES (NULL, ?) RETURNING enum_id",
+            (enum_cls.type_name,),
+        )
+        enum_id = res.fetchone()[0]
+        cur.executemany(
+            "INSERT INTO enum_members VALUES (?, ?, ?)",
+            [
+                (enum_id, filter_enum_member(member.name), member.value)
+                for member in enum_cls.members.values()
+            ],
+        )
+        cur.close()
+
+        self._enum_ids[enum_cls] = enum_id
+        return enum_id
 
     def finish(self) -> None:
         self.db.commit()

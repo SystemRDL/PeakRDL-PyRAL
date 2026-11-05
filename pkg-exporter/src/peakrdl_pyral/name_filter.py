@@ -1,3 +1,5 @@
+import keyword
+
 COMMON_RESERVED_WORDS = {
     "parent",
     "_dbapi",
@@ -46,5 +48,19 @@ def filter_group_item(s: str) -> str:
 
 def filter_register_item(s: str) -> str:
     if s in REGISTER_RESERVED_WORDS:
+        s += "_"
+    return s
+
+# Names that cannot be used as Enum members
+ENUM_RESERVED_WORDS = {
+    "mro",
+}
+
+def filter_enum_member(s: str) -> str:
+    if s.startswith("_"):
+        # Python's Enum reserves _sunder_ names, ignores __dunder__ names and
+        # mangles __private names. Prefix so the member stays a plain name.
+        s = "m" + s
+    if keyword.iskeyword(s) or s in ENUM_RESERVED_WORDS:
         s += "_"
     return s
